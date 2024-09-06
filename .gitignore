@@ -1,0 +1,10 @@
+# extensions
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+
+# paths
+Build/.vs
+Build/Bin
+Thirdparty
