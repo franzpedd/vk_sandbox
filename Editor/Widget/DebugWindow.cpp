@@ -19,14 +19,13 @@ namespace Cosmos::Editor
 
 		if (mOpened)
 		{
-			if (ImGui::Begin("Debug/Info", &mOpened))
-			{
-				ImGui::Text("App Timestep: %f", mApplication->GetTimestepRef()->GetTimestep());
-				ImGui::Text("App FPS: %.3f", mApplication->GetTimestepRef()->GetFramesPerSecond());
-				ImGui::Text("Cam Pos (%.3f %.3f %.3f)", camera.GetPositionRef().x, camera.GetPositionRef().y, camera.GetPositionRef().z);
-				ImGui::Text("Cam Rot: (%.3f %.3f %.3f)", camera.GetRotationRef().x, camera.GetRotationRef().y, camera.GetRotationRef().z);
-				ImGui::Text("Cam Aim: (%.3f %.3f %.3f)", camera.GetFrontRef().x, camera.GetFrontRef().y, camera.GetFrontRef().z);
-			}
+			ImGui::Begin("Debug/Info", &mOpened);
+
+			ImGui::Text("App Timestep: %f", mApplication->GetTimestepRef()->GetTimestep());
+			ImGui::Text("App FPS: %.3f", mApplication->GetTimestepRef()->GetFramesPerSecond());
+			ImGui::Text("Cam Pos (%.3f %.3f %.3f)", camera.GetPositionRef().x, camera.GetPositionRef().y, camera.GetPositionRef().z);
+			ImGui::Text("Cam Rot: (%.3f %.3f %.3f)", camera.GetRotationRef().x, camera.GetRotationRef().y, camera.GetRotationRef().z);
+			ImGui::Text("Cam Aim: (%.3f %.3f %.3f)", camera.GetFrontRef().x, camera.GetFrontRef().y, camera.GetFrontRef().z);
 
 			ImGui::End();
 		}

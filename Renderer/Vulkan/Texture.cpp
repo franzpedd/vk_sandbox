@@ -21,10 +21,10 @@
 
 namespace Cosmos::Renderer::Vulkan
 {
-	Texture2D::Texture2D(std::string path)
+	Texture2D::Texture2D(std::string path, bool guiImage)
 		: mPath(path)
 	{
-		LoadTexture();
+		LoadTexture(guiImage);
 		auto& renderer = Context::GetRef();
 
 		// image view
@@ -59,7 +59,7 @@ namespace Cosmos::Renderer::Vulkan
 		vkDestroySampler(renderer.GetDevice()->GetLogicalDevice(), mSampler, nullptr);
 	}
 
-	void Texture2D::LoadTexture()
+	void Texture2D::LoadTexture(bool guiImage)
 	{
 		int32_t channels;
 		stbi_uc* pixels = stbi_load(mPath.c_str(), &mWidth, &mHeight, &channels, STBI_rgb_alpha);
@@ -69,7 +69,7 @@ namespace Cosmos::Renderer::Vulkan
 			return;
 		}
 
-		mMipLevels = (uint32_t)(std::floor(std::log2(std::max(mWidth, mHeight)))) + 1;
+		mMipLevels =  guiImage ? 1 : (uint32_t)(std::floor(std::log2(std::max(mWidth, mHeight)))) + 1;
 		VkDeviceSize imgSize = (VkDeviceSize)(mWidth * mHeight * 4); // enforce 4 channels
 
 		// create staging buffer for image
@@ -102,7 +102,7 @@ namespace Cosmos::Renderer::Vulkan
 			mHeight,
 			mMipLevels,
 			1,
-			renderpass->GetMSAA(),
+			guiImage ? VK_SAMPLE_COUNT_1_BIT : renderpass->GetMSAA(),
 			VK_FORMAT_R8G8B8A8_SRGB,
 			VK_IMAGE_TILING_OPTIMAL,
 			VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,

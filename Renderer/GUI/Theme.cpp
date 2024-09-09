@@ -20,7 +20,7 @@ namespace Cosmos
         ImGuiStyle* style = &ImGui::GetStyle();
         style->GrabRounding = 4.0f;
         style->WindowMinSize = ImVec2(5.0f, 5.0f);
-        style->Alpha = 0.85f;
+        style->Alpha = 1.0f;
 
         ImVec4* colors = style->Colors;
         colors[ImGuiCol_Text] = ImGui::ColorConvertU32ToFloat4(GRAY800); // text on hovered controls is gray900

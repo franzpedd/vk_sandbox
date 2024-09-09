@@ -53,6 +53,9 @@ namespace Cosmos::Platform
 			fullScreen ? SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_FULLSCREEN : SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE
 		);
 #endif
+
+        COSMOS_LOG(Logger::Todo, " FUNC:StaleResizeFramebuffer this is wacky but we can't create a swapchain with the window minimized, therefore we must stalle the window somehow \
+            I have choosen to wait the application until it's not minimized anymore but this may desired in some cases");
 	}
 
 	void MainWindow::Shutdown()
@@ -236,9 +239,6 @@ namespace Cosmos::Platform
 
     void MainWindow::StaleResizeFramebuffer()
     {
-        COSMOS_LOG(Logger::Todo, "this is wacky but we can't create a swapchain with the window minimized, therefore we must stalle the window somehow \
-            I have choosen to wait the application until it's not minimized anymore but this may desired in some cases");
-
         SDL_Event e;
         while (SDL_GetWindowFlags(mNativeWindow) & SDL_WINDOW_MINIMIZED)
         {

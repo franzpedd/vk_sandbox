@@ -1,6 +1,7 @@
 #include "Mainmenu.h"
 
 #include "DebugWindow.h"
+#include "Explorer.h"
 #include <Platform/Core/MainWindow.h>
 #include <Renderer/GUI/CustomWidget.h>
 #include <Renderer/GUI/GUI.h>
@@ -14,6 +15,10 @@ namespace Cosmos::Editor
 	{
 		mDebugWindow = new DebugWindow(mApplication);
 		Renderer::GUI::GetRef().AddWidget(mDebugWindow);
+
+		mExplorer = new Explorer();
+		Renderer::GUI::GetRef().AddWidget(mExplorer);
+
 	}
 
 	Mainmenu::~Mainmenu()
@@ -52,10 +57,19 @@ namespace Cosmos::Editor
 		if (ImGui::BeginMenu(ICON_LC_VIEW " View"))
 		{
 			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 2.0f));
-			bool s_info = mDebugWindow->IsOpened();
-			if(ImGui::Checkbox("Info", &s_info)) {
-				mDebugWindow->SetOpened(s_info);
+
+			// info box
+			bool info = mDebugWindow->IsOpened();
+			if(ImGui::Checkbox("Info", &info)) {
+				mDebugWindow->SetOpened(info);
 			}
+
+			// file explorer
+			bool explorer = mExplorer->IsOpened();
+			if (ImGui::Checkbox("Explorer", &explorer)) {
+				mExplorer->SetOpened(explorer);
+			}
+
 			ImGui::PopStyleVar();
 			ImGui::EndMenu();
 		}

@@ -13,7 +13,7 @@ namespace Cosmos::Renderer::Vulkan
 	public:
 
 		// constructor
-		Texture2D(std::string path);
+		Texture2D(std::string path, bool guiImage = false);
 
 		// destructor
 		~Texture2D();
@@ -29,7 +29,7 @@ namespace Cosmos::Renderer::Vulkan
 	private:
 
 		// loads the texture based on constructor's path
-		void LoadTexture();
+		void LoadTexture(bool guiImage);
 
 		// creates mipmaps for the current bound texture
 		void CreateMipmaps();
