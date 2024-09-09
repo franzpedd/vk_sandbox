@@ -164,28 +164,28 @@ namespace Cosmos::Editor
 		// holds paths
 		std::vector<std::filesystem::path> paths = {};
 
-		// not on search mode, include all files within the current path
-		if (mSearchboxText.empty()) {
-			for (auto const& dirEntry : std::filesystem::directory_iterator(path)) {
-				paths.push_back(dirEntry.path());
+		// recusive search
+		if (mRecursiveSearch && !mSearchboxText.empty()) {
+			for (auto const& dirEntry : std::filesystem::recursive_directory_iterator(path)) {
+				if (dirEntry.path().string().find(mSearchboxText) != std::string::npos) {
+					paths.push_back(dirEntry.path());
+				}
 			}
 		}
 
-		// search mode, check either if searching recurisively or not, files must contain the substring mSearchboxText
+		// current path search
 		else {
-			if (mRecursiveSearch) {
-				for (auto const& dirEntry : std::filesystem::recursive_directory_iterator(path)) {
-					if (dirEntry.path().string().find(mSearchboxText) != std::string::npos) {
-						paths.push_back(dirEntry.path());
-					}
-				}
-			}
+			for (auto const& dirEntry : std::filesystem::directory_iterator(path)) {
 
-			else {
-				for (auto const& dirEntry : std::filesystem::directory_iterator(path)) {
-					if (dirEntry.path().string().find(mSearchboxText) != std::string::npos) {
-						paths.push_back(dirEntry.path());
-					}
+				// not on search mode, append all dir paths
+				if (mSearchboxText.empty()) {
+					paths.push_back(dirEntry.path());
+					continue;
+				}
+
+				// on search mode, mSearchboxText must be a substring of dirEntry.filename
+				if (dirEntry.path().filename().string().find(mSearchboxText) != std::string::npos) {
+					paths.push_back(dirEntry.path());
 				}
 			}
 		}
