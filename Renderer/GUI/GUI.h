@@ -60,14 +60,19 @@ namespace Cosmos::Renderer
 		// sends input events to user interface
 		void HandleInputEvent(SDL_Event* e);
 
-		// adds a texture to be used on the ui
-		void* AddTexture(Shared<Vulkan::Texture2D> texture);
+		// toggles the cursor on and off
+		void ToggleCursor(bool hide);
 
 		// adds a new widget to the ui
 		void AddWidget(Widget* widget);
 
-		// toggles the cursor on and off
-		void ToggleCursor(bool hide);
+	public:
+
+		// adds a texture to be used on the ui
+		void* AddTexture(Shared<Vulkan::Texture2D> texture);
+
+		// adds a texture to be used on the ui, only needs opaque pointers
+		void* AddTexture(void* sampler, void* view);
 
 		// sets how many frames are simultaneously being rendered
 		void SetImageCount(uint32_t count);

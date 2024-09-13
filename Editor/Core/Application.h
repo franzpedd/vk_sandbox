@@ -3,8 +3,8 @@
 #include <Engine/Core/Application.h>
 
 // forward declaration
-
-namespace Cosmos::Editor { class Grid; }
+namespace Cosmos::Engine { class Project; }
+namespace Cosmos::Editor { class Dockspace; }
 namespace Cosmos::Editor { class Mainmenu; }
 
 namespace Cosmos::Editor
@@ -14,14 +14,14 @@ namespace Cosmos::Editor
 	public:
 
 		// constructor
-		Application();
+		Application(Shared<Engine::Project> project);
 
 		// destructor
 		virtual ~Application();
 
 	private:
 
-		Grid* mGrid = nullptr;
+		Dockspace* mDockspace = nullptr;
 		Mainmenu* mMainmenu = nullptr;
 	};
 }

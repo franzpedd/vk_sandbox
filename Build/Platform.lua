@@ -33,18 +33,21 @@ project "Platform"
 
         includedirs
         {
-            "../Thirdparty/sdl2/sdl2/include"       -- sdl
+            "../Thirdparty/sdl2/sdl2/include",      -- sdl
+            "../Thirdparty/sdl2/sdl2image/include"  -- sdlimage
         }
 
         prebuildcommands
         {
             "{COPYFILE} ../Thirdparty/sdl2/sdl2/lib/x64/SDL2.dll " .. paths.Binary;
+            "{COPYFILE} ../Thirdparty/sdl2/sdl2image/lib/x64/SDL2_image.dll " .. paths.Binary;
         }
 
         links
         {
             "../Thirdparty/sdl2/sdl2/lib/x64/SDL2.lib",             -- sdl2
-            "../Thirdparty/sdl2/sdl2/lib/x64/SDL2main.lib"          -- sdl2 entrypoint
+            "../Thirdparty/sdl2/sdl2/lib/x64/SDL2main.lib",         -- sdl2 entrypoint
+            "../Thirdparty/sdl2/sdl2image/lib/x64/SDL2_image.lib"   -- sdl2 image
         }
 
         defines
@@ -61,7 +64,8 @@ project "Platform"
     if os.host() == "linux" then
         links
         {
-            "SDL2"
+            "SDL2",
+            "SDL2_image"
         }
     end
 

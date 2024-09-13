@@ -2,6 +2,7 @@
 
 // forward declarations
 struct SDL_Window;
+struct SDL_Surface;
 namespace Cosmos::Engine { class Application; }
 
 namespace Cosmos::Platform
@@ -84,6 +85,7 @@ namespace Cosmos::Platform
 
 		Engine::Application* mApplication;
 		SDL_Window* mNativeWindow = nullptr;
+		SDL_Surface* mIconSurface = nullptr;
 		bool mShouldQuit = false;
 		bool mShouldResizeWindow = false;
 	};

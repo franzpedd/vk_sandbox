@@ -1,20 +1,27 @@
 #include "Application.h"
 
+#include "Project.h"
+#include "Scene.h"
 #include "Timestep.h"
 #include "Entity/Camera.h"
+#include <Common/File/Filesystem.h>
 #include <Platform/Core/MainWindow.h>
 #include <Renderer/Core/Context.h>
 #include <Renderer/GUI/GUI.h>
 
 namespace Cosmos::Engine
 {
-	Application::Application()
+	Application::Application(Shared<Project> project)
+		: mProject(project)
 	{
-		Platform::MainWindow::Initialize(this, "Application", 800, 600, false);
+		auto& settings = mProject->GetSettingsRef();
+		SetAssetsDir(settings.datapath);
+
+		Platform::MainWindow::Initialize(this, settings.gamename.c_str(), settings.width, settings.height, settings.fullscreen);
 		Camera::Initialize(Platform::MainWindow::GetRef().GetAspectRatio());
 		Renderer::Context::Initialize(this);
 		Renderer::GUI::Initialize();
-
+		mCurrentScene = CreateShared<Scene>(settings.initialscene);
 		mTimestep = CreateUnique<Timestep>(this);
 	}
 
@@ -38,6 +45,9 @@ namespace Cosmos::Engine
 	{
 		// Todo: Implement interpolation beetween previous frame data and current frame data
 		// a frame data will be a class/struct that holds info about the physics, like position on world
+		double ts = mTimestep->GetTimestep();
+
+		mCurrentScene->OnUpdate(ts);
 	}
 
 	void Application::OnAsyncUpdate()

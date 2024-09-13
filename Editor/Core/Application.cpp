@@ -1,15 +1,16 @@
 #include "Application.h"
 
-#include "GUI/GUI.h"
+#include "Widget/Dockspace.h"
 #include "Widget/Mainmenu.h"
-#include "Viewport/Grid.h"
+#include <Renderer/GUI/GUI.h>
 
 namespace Cosmos::Editor
 {
-	Application::Application()
+	Application::Application(Shared<Engine::Project> project)
+		: Engine::Application(project)
 	{
-		mGrid = new Grid();
-		Renderer::GUI::GetRef().AddWidget(mGrid);
+		mDockspace = new Dockspace();
+		Renderer::GUI::GetRef().AddWidget(mDockspace);
 
 		mMainmenu = new Mainmenu(this);
 		Renderer::GUI::GetRef().AddWidget(mMainmenu);

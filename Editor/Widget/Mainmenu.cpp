@@ -2,6 +2,9 @@
 
 #include "DebugWindow.h"
 #include "Explorer.h"
+#include "ImDemo.h"
+#include "Viewport/Viewport.h"
+
 #include <Platform/Core/MainWindow.h>
 #include <Renderer/GUI/CustomWidget.h>
 #include <Renderer/GUI/GUI.h>
@@ -13,12 +16,17 @@ namespace Cosmos::Editor
 	Mainmenu::Mainmenu(Application* application)
 		: Widget("Mainmenu"), mApplication(application)
 	{
+		mViewport = new Viewport();
+		Renderer::GUI::GetRef().AddWidget(mViewport);
+
 		mDebugWindow = new DebugWindow(mApplication);
 		Renderer::GUI::GetRef().AddWidget(mDebugWindow);
 
 		mExplorer = new Explorer();
 		Renderer::GUI::GetRef().AddWidget(mExplorer);
 
+		mImDemo = new ImDemo();
+		Renderer::GUI::GetRef().AddWidget(mImDemo);
 	}
 
 	Mainmenu::~Mainmenu()
@@ -26,22 +34,7 @@ namespace Cosmos::Editor
 	}
 
 	void Mainmenu::OnUpdate()
-	{
-		// set the window into the correct position and it's flags
-		//int drawableWidth, drawableHeight;
-		//Platform::MainWindow::GetRef().GetFrameBufferSize(&drawableWidth, &drawableHeight);
-		//
-		//int relativeX, relativeY;
-		//Platform::MainWindow::GetRef().GetRelativePosition(&relativeX, &relativeY);
-		//
-		//ImGui::SetNextWindowSize(ImVec2((float)drawableWidth, 50.0f));
-		//ImGui::SetNextWindowPos(ImVec2((float)relativeX, (float)relativeY));
-		//ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar 
-		//	| ImGuiWindowFlags_NoResize
-		//	| ImGuiWindowFlags_NoMove
-		//	| ImGuiWindowFlags_NoScrollbar
-		//	| ImGuiWindowFlags_NoCollapse ; //ImGuiWindowFlags_;
-		
+	{	
 		ImGui::BeginMainMenuBar();
 		DisplayMenuItems();
 		ImGui::EndMainMenuBar();
@@ -49,14 +42,20 @@ namespace Cosmos::Editor
 
 	void Mainmenu::DisplayMenuItems()
 	{
-		if (ImGui::BeginMenu(ICON_LC_MAP " World"))
+		if (ImGui::BeginMenu(ICON_FA_GLOBE " World"))
 		{
 			ImGui::EndMenu();
 		}
 
-		if (ImGui::BeginMenu(ICON_LC_VIEW " View"))
+		if (ImGui::BeginMenu(ICON_FA_EYE " View"))
 		{
 			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 2.0f));
+
+			// imgui demo
+			bool imdemo = mImDemo->IsOpened();
+			if (ImGui::Checkbox("ImDemo", &imdemo)) {
+				mImDemo->SetOpened(imdemo);
+			}
 
 			// info box
 			bool info = mDebugWindow->IsOpened();
@@ -74,12 +73,12 @@ namespace Cosmos::Editor
 			ImGui::EndMenu();
 		}
 		
-		if (ImGui::BeginMenu(ICON_FA_COG " Settings"))
+		if (ImGui::BeginMenu(ICON_FA_WRENCH " Settings"))
 		{
 			ImGui::EndMenu();
 		}
 
-		if (ImGui::BeginMenu(ICON_LC_SEARCH " Debug"))
+		if (ImGui::BeginMenu(ICON_FA_BUG " Debug"))
 		{
 			ImGui::EndMenu();
 		}

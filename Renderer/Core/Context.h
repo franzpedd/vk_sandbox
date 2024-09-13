@@ -57,7 +57,7 @@ namespace Cosmos::Renderer
 		inline Shared<Vulkan::Swapchain> GetSwapchain() { return mSwapchain; }
 
 		// return a reference to the main render pass at the momment
-		inline Shared<Vulkan::Renderpass> GetMainRenderpassRef() { return mMainRenderpass; }
+		inline Shared<Vulkan::Renderpass>& GetMainRenderpassRef() { return mMainRenderpass; }
 
 		// returns a reference to the render passes
 		inline Library<Shared<Vulkan::Renderpass>>& GetRenderpassesLibraryRef() { return mRenderpasses; }

@@ -14,6 +14,7 @@
 #include <Common/File/Filesystem.h>
 
 #include <Engine/Core/Application.h>
+#include <Engine/Core/Project.h>
 #include <Engine/Entity/Camera.h>
 
 #include <Platform/Core/MainWindow.h>
@@ -52,7 +53,8 @@ namespace Cosmos::Renderer
 	Context::Context(Engine::Application* application)
 		: mApplication(application)
 	{
-		mInstance = CreateShared<Vulkan::Instance>("Cosmos", "Editor", true, "0.0.1", "1.2.0");
+		auto& settings = mApplication->GetProjectRef()->GetSettingsRef();
+		mInstance = CreateShared<Vulkan::Instance>(settings.enginename, settings.gamename, settings.validations, settings.version, settings.vulkanversion);
 		mDevice = CreateShared<Vulkan::Device>(mInstance, 2);
 		mSwapchain = CreateShared<Vulkan::Swapchain>(mDevice, mRenderpasses);
 
@@ -274,6 +276,11 @@ namespace Cosmos::Renderer
 
 		// grid
 		{
+			// remove previously 
+			if (mPipelines.Exists("Grid")) {
+				mPipelines.Erase("Grid");
+			}
+
 			Renderer::Vulkan::Pipeline::CreateInfo gridSpecificaiton = {};
 			gridSpecificaiton.renderPass = mMainRenderpass;
 			gridSpecificaiton.vertexShader = CreateShared<Vulkan::Shader>(mDevice, Vulkan::ShaderType::Vertex, "Grid.vert", GetAssetSubDir("Shader/grid.vert").c_str());
@@ -341,10 +348,7 @@ namespace Cosmos::Renderer
 			scissor.extent = mSwapchain->GetExtent();
 			vkCmdSetScissor(cmdBuffer, 0, 1, &scissor);
 
-			// render objects
-			
-			// render GUI
-			GUI::GetRef().OnRender();
+			// not rendering on the swapchain render pass, as we'are using the viewport to draw stuff into
 
 			vkCmdEndRenderPass(cmdBuffer);
 
@@ -393,9 +397,10 @@ namespace Cosmos::Renderer
 			scissor.extent = mSwapchain->GetExtent();
 			vkCmdSetScissor(cmdBuffer, 0, 1, &scissor);
 
-			// render geometry and viewport
-			//mApplication->GetActiveScene()->OnRender();
-			//GUI::GetRef().OnRender();
+			// render objects
+			
+			// render ui 
+			GUI::GetRef().OnRender();
 
 			vkCmdEndRenderPass(cmdBuffer);
 

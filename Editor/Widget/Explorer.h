@@ -80,7 +80,7 @@ namespace Cosmos::Editor
 
 	private:
 
-		bool mOpened = false;
+		bool mOpened = true;
 		bool mRecursiveSearch = false;
 		bool mRefreshExplorer = true;
 		std::string mCurrentDir = {};

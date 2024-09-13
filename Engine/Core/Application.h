@@ -3,6 +3,8 @@
 #include <Common/Util/Memory.h>
 
 // forward declarations
+namespace Cosmos::Engine { class Project; }
+namespace Cosmos::Engine { class Scene; }
 namespace Cosmos::Engine { class Timestep; }
 namespace Cosmos::Platform { class EventBase; }
 
@@ -13,13 +15,19 @@ namespace Cosmos::Engine
 	public:
 
 		// constructor
-		Application();
+		Application(Shared<Project> project);
 
 		// destructor
 		virtual ~Application();
 
 		// returns a reference to the timestep
 		inline Unique<Timestep>& GetTimestepRef() { return mTimestep; }
+
+		// returns a reference to the project
+		inline Shared<Project>& GetProjectRef() { return mProject; }
+
+		// returns the current scene
+		inline Shared<Scene> GetCurrentScene() { return mCurrentScene; }
 
 	public:
 
@@ -37,6 +45,8 @@ namespace Cosmos::Engine
 
 	private:
 		
+		Shared<Project> mProject;
 		Unique<Timestep> mTimestep;
+		Shared<Scene> mCurrentScene;
 	};
 }

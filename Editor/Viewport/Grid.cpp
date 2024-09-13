@@ -18,7 +18,6 @@
 namespace Cosmos::Editor
 {
 	Grid::Grid()
-		: Renderer::Widget("Grid")
 	{
 		CreateRendererResources();
 	}
@@ -54,17 +53,14 @@ namespace Cosmos::Editor
 			Platform::Keycode key = castedEvent->GetKeycode();
 
 			// toggle editor viewport camera
-			if (key == Platform::KEY_Z)
-			{
-				if (camera.CanMove() && camera.GetType() == Engine::CameraType::FreeLook)
-				{
+			if (key == Platform::KEY_Z) {
+				if (camera.CanMove() && camera.GetType() == Engine::CameraType::FreeLook) {
 					camera.SetMove(false);
 					Platform::MainWindow::GetRef().ToggleCursor(false);
 					Renderer::GUI::GetRef().ToggleCursor(false);
 				}
 
-				else if (!camera.CanMove() && camera.GetType() == Engine::CameraType::FreeLook)
-				{
+				else if (!camera.CanMove() && camera.GetType() == Engine::CameraType::FreeLook) {
 					camera.SetMove(true);
 					Platform::MainWindow::GetRef().ToggleCursor(true);
 					Renderer::GUI::GetRef().ToggleCursor(true);

@@ -2,19 +2,17 @@
 
 #include <Renderer/GUI/Widget.h>
 
-namespace Cosmos::Editor { class Application; }
-
 namespace Cosmos::Editor
 {
-	class DebugWindow : public Renderer::Widget
+	class ImDemo : public Renderer::Widget
 	{
 	public:
 
 		// constructor
-		DebugWindow(Application* application);
+		ImDemo();
 
 		// destructor
-		virtual ~DebugWindow() = default;
+		virtual ~ImDemo() = default;
 
 	public:
 
@@ -30,8 +28,7 @@ namespace Cosmos::Editor
 		inline bool IsOpened() { return mOpened; }
 
 	private:
-		
-		Application* mApplication = nullptr;
-		bool mOpened = true;
+
+		bool mOpened = false;
 	};
 }

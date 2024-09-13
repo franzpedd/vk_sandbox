@@ -6,6 +6,8 @@
 namespace Cosmos::Editor { class Application; }
 namespace Cosmos::Editor { class DebugWindow; }
 namespace Cosmos::Editor { class Explorer; }
+namespace Cosmos::Editor { class ImDemo; }
+namespace Cosmos::Editor { class Viewport; }
 
 namespace Cosmos::Editor
 {
@@ -34,5 +36,7 @@ namespace Cosmos::Editor
 		Application* mApplication = nullptr;
 		DebugWindow* mDebugWindow = nullptr;
 		Explorer* mExplorer = nullptr;
+		ImDemo* mImDemo = nullptr;
+		Viewport* mViewport = nullptr;
 	};
 }

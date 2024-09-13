@@ -7,6 +7,7 @@
 #include "Event/WindowEvent.h"
 
 #include <Common/Debug/Logger.h>
+#include <Common/File/Filesystem.h>
 #include <Engine/Core/Application.h>
 #include <Renderer/GUI/GUI.h>
 
@@ -19,10 +20,12 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_vulkan.h>
 #include <SDL2/SDL_scancode.h>
+#include <SDL2/SDL_image.h>
 #elif defined(PLATFORM_WINDOWS) && defined(RENDERER_VULKAN)
 #include <SDL.h>
 #include <SDL_vulkan.h>
 #include <SDL_scancode.h>
+#include <SDL_image.h>
 #endif
 
 #if defined(PLATFORM_WINDOWS)
@@ -50,16 +53,19 @@ namespace Cosmos::Platform
 			SDL_WINDOWPOS_CENTERED,
 			width,
 			height,
-			fullScreen ? SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_FULLSCREEN : SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE
+			fullScreen ? SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_FULLSCREEN  : SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE
 		);
 #endif
+        s_Instance->mIconSurface = IMG_Load(GetAssetSubDir("Texture/icon.png").c_str());
+        SDL_SetWindowIcon(s_Instance->mNativeWindow, s_Instance->mIconSurface);
+        SDL_FreeSurface(s_Instance->mIconSurface);
 
-        COSMOS_LOG(Logger::Todo, " FUNC:StaleResizeFramebuffer this is wacky but we can't create a swapchain with the window minimized, therefore we must stalle the window somehow \
-            I have choosen to wait the application until it's not minimized anymore but this may desired in some cases");
+        COSMOS_LOG(Logger::Todo, "FUNC:StaleResizeFramebuffer this is wacky but we can't create a swapchain with the window minimized, therefore we must stalle the window somehow. I have choosen to wait the application until it's not minimized anymore but this may desired in some cases");
 	}
 
 	void MainWindow::Shutdown()
 	{
+        
 		SDL_DestroyWindow(s_Instance->mNativeWindow);
 
 		delete s_Instance;

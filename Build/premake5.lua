@@ -26,6 +26,7 @@ paths["Volk"]       = "../Thirdparty/volk";
 paths["VMA"]        = "../Thirdparty/vma/include";
 paths["STB"]        = "../Thirdparty/stb"
 paths["ImGui"]      = "../Thirdparty/imgui";
+paths["Entt"]       = "../Thirdparty/entt/single_include"
 
 -- projects
 group "Thirdparty"

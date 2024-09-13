@@ -27,7 +27,8 @@ project "Editor"
         "%{paths.GLM}",
         "%{paths.Volk}",
         "%{paths.VMA}",
-        "%{paths.ImGui}"
+        "%{paths.ImGui}",
+        "%{paths.Entt}"
     }
 
     defines

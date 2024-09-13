@@ -54,7 +54,7 @@ namespace Cosmos::Editor
 	{
 		if (mOpened)
 		{
-			ImGui::Begin("Explorer", &mOpened);
+			ImGui::Begin(ICON_FA_FOLDER " Explorer", &mOpened);
 
 			// search box part
 			{
@@ -73,10 +73,14 @@ namespace Cosmos::Editor
 
 				if (ImGui::Checkbox("Include sub-folders", &mRecursiveSearch)) {
 					mRefreshExplorer = true;
-				}
+				}				
 			}
 
-			ImGui::Separator();
+			// separator
+			std::string separatorText = ICON_FA_CHEVRON_RIGHT;
+			separatorText.append(mCurrentDir);
+			ImGui::SeparatorText(separatorText.c_str());
+
 			ImGui::NewLine();
 
 			// check if contents should be refreshed

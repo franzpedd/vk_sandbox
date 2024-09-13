@@ -29,11 +29,9 @@ namespace Cosmos
 
 	void SetAssetsDir(std::string path)
 	{
-		if (!std::filesystem::is_directory(path)) {
-			COSMOS_LOG(Logger::Error, "Data path '%s' is not valid. This will crash", path.c_str());
+		if (std::filesystem::is_directory(path)) {
+			s_AssetsDir = path;
 		}
-		
-		s_AssetsDir = path;
 	}
 
 	std::string GetAssetSubDir(std::string subpath, bool removeExtension)

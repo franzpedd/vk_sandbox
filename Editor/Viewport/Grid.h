@@ -3,17 +3,15 @@
 #include <Renderer/Wrapper/vulkan.h>
 
 #include <Common/Util/Memory.h>
-#include <Renderer/GUI/Widget.h>
 #include <vector>
 
 // forwar declarations
 namespace Cosmos::Platform { class EventBase; }
 namespace Cosmos::Renderer::Vulkan { class Shader; }
 
-
 namespace Cosmos::Editor
 {
-	class Grid : public Renderer::Widget
+	class Grid
 	{
 	public:
 
@@ -21,15 +19,15 @@ namespace Cosmos::Editor
 		Grid();
 
 		// destructor
-		virtual ~Grid();
+		~Grid();
 
 	public:
 
 		// draws the grid
-		virtual void OnRender() override;
+		void OnRender();
 
 		// called when an event happen
-		virtual void OnEvent(Shared<Platform::EventBase> event) override;
+		void OnEvent(Shared<Platform::EventBase> event);
 
 	public:
 

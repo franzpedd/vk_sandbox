@@ -19,7 +19,8 @@ project "Engine"
         "%{paths.Workspace}",
         "%{paths.Engine}",
         --
-        "%{paths.GLM}"
+        "%{paths.GLM}",
+        "%{paths.Entt}"
     }
 
     defines

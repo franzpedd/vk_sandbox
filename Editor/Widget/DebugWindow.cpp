@@ -19,7 +19,7 @@ namespace Cosmos::Editor
 
 		if (mOpened)
 		{
-			ImGui::Begin("Debug/Info", &mOpened);
+			ImGui::Begin(ICON_FA_INFO_CIRCLE " Debug", &mOpened);
 
 			ImGui::Text("App Timestep: %f", mApplication->GetTimestepRef()->GetTimestep());
 			ImGui::Text("App FPS: %.3f", mApplication->GetTimestepRef()->GetFramesPerSecond());

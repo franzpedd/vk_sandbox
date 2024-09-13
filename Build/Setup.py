@@ -83,19 +83,24 @@ class Project :
             return;
     
     @classmethod # SDL windowing manager, downloads it's binary instead of compiling it as it's unnecessary work
-    def DownloadSDL2(itself, version) :
+    def DownloadSDL2(itself, versionSDL, versionSDLImage) :
         if(platform.system() == "Windows") : 
             if(os.path.isdir("Thirdparty/sdl2") is False) :  os.makedirs("Thirdparty/sdl2");
 
-            url = f"https://github.com/libsdl-org/SDL/releases/download/release-{version}/SDL2-devel-{version}-VC.zip";
-            path = f"Thirdparty/sdl2/SDL2-devel-{version}-VC.zip";
+            url0 = f"https://github.com/libsdl-org/SDL/releases/download/release-{versionSDL}/SDL2-devel-{versionSDL}-VC.zip";
+            path0 = f"Thirdparty/sdl2/SDL2-devel-{versionSDL}-VC.zip";
+            url1 = f"https://github.com/libsdl-org/SDL_image/releases/download/release-{versionSDLImage}/SDL2_image-devel-{versionSDLImage}-VC.zip"
+            path1 = f"Thirdparty/sdl2/SDL2_image-devel-{versionSDLImage}-VC.zip";
 
-            Util.Download(url, path);
+            Util.Download(url0, path0);
+            Util.Download(url1, path1);
 
-            if(os.path.isdir("Thirdparty/sdl2/sdl2") is True) : return;
-        
-            Util.Decompress(path, "Thirdparty/sdl2");
-            os.rename(f"Thirdparty/sdl2/SDL2-{version}", "Thirdparty/sdl2/sdl2");
+            if(os.path.isdir("Thirdparty/sdl2/sdl2") is False) :
+                Util.Decompress(path0, "Thirdparty/sdl2");
+                os.rename(f"Thirdparty/sdl2/SDL2-{versionSDL}", "Thirdparty/sdl2/sdl2");
+            if(os.path.isdir("Thirdparty/sdl2/sdl2image") is False) :
+                Util.Decompress(path1, "Thirdparty/sdl2");
+                os.rename(f"Thirdparty/sdl2/SDL2_image-{versionSDLImage}", "Thirdparty/sdl2/sdl2image");
 
         elif(platform.system() == "Linux") :
             print("SDL must be installed as a package, ignore this if already installed");
@@ -145,7 +150,7 @@ class Project :
 Project.ChangeBuildPath(os.pardir);
 Project.DownloadPremake("5.0.0-beta2");
 Project.DownloadVulkan("1.3.236.0");
-Project.DownloadSDL2("2.30.2");
+Project.DownloadSDL2("2.30.2", "2.8.2");
 
 # download github dependencies
 Util.Clone("https://github.com/g-truc/glm", "glm", "0.9.8");
@@ -154,6 +159,7 @@ Util.Clone("https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator", 
 Util.Clone("https://github.com/nothings/stb", "stb", "master");
 Util.Clone("https://github.com/ocornut/imgui", "imgui", "docking");
 Util.Clone("https://github.com/CedricGuillemet/ImGuizmo", "imgui/imguizmo", "master");
+Util.Clone("https://github.com/skypjack/entt", "entt", "master");
 
 # generates the solution files
 Project.ChangeBuildPath(Project.StartingPath);
