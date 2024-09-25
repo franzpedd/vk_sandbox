@@ -1,6 +1,7 @@
 #pragma once
 
 #include <unordered_map>
+#include <string>
 
 namespace Cosmos
 {
@@ -19,18 +20,18 @@ namespace Cosmos
 		}
 
 		// returns all objects ref
-		inline std::unordered_map<const char*, T>& GetAllRefs() { return mContent; }
+		inline std::unordered_map<std::string, T>& GetAllRefs() { return mContent; }
 
 	public:
 
 		// checks if a given content/element exists within the library
-		bool Exists(const char* name)
+		bool Exists(std::string name)
 		{
 			return mContent.find(name) != mContent.end() ? true : false;
 		}
 
 		// inserts a new content/element into the library
-		void Insert(const char* name, T object)
+		void Insert(std::string name, T object)
 		{
 			if (mContent.find(name) == mContent.end()) {
 				mContent[name] = object;
@@ -38,7 +39,7 @@ namespace Cosmos
 		}
 
 		// deletes a content/element from the library
-		void Remove(const char* name)
+		void Remove(std::string name)
 		{
 			if (Exists(name)) {
 				mContent.erase(name);
@@ -46,7 +47,7 @@ namespace Cosmos
 		}
 
 		// erases a given content/element from the library
-		void Erase(const char* name)
+		void Erase(std::string name)
 		{
 			if (mContent.find(name) != mContent.end()) {
 				mContent.erase(name);
@@ -54,7 +55,7 @@ namespace Cosmos
 		}
 
 		// returns the object reference
-		T& GetRef(const char* name)
+		T& GetRef(std::string name)
 		{
 			if (!Exists(name)) { // cannot return a reference for a non-existent content
 				std::abort();
@@ -65,6 +66,6 @@ namespace Cosmos
 
 	private:
 
-		std::unordered_map<const char*, T> mContent;
+		std::unordered_map<std::string, T> mContent;
 	};
 }

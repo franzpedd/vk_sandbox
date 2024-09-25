@@ -3,6 +3,7 @@
 #include "DebugWindow.h"
 #include "Explorer.h"
 #include "ImDemo.h"
+#include "Hierarchy/Hierarchy.h"
 #include "Viewport/Viewport.h"
 
 #include <Platform/Core/MainWindow.h>
@@ -27,6 +28,9 @@ namespace Cosmos::Editor
 
 		mImDemo = new ImDemo();
 		Renderer::GUI::GetRef().AddWidget(mImDemo);
+
+		mHierarchy = new Hierarchy(application);
+		Renderer::GUI::GetRef().AddWidget(mHierarchy);
 	}
 
 	Mainmenu::~Mainmenu()
@@ -51,6 +55,8 @@ namespace Cosmos::Editor
 		{
 			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 2.0f));
 
+			ImGui::SeparatorText("Widgets");
+
 			// imgui demo
 			bool imdemo = mImDemo->IsOpened();
 			if (ImGui::Checkbox("ImDemo", &imdemo)) {
@@ -67,6 +73,12 @@ namespace Cosmos::Editor
 			bool explorer = mExplorer->IsOpened();
 			if (ImGui::Checkbox("Explorer", &explorer)) {
 				mExplorer->SetOpened(explorer);
+			}
+
+			// scene hierarchy
+			bool sceneHierarchy = mHierarchy->IsOpened();
+			if (ImGui::Checkbox("Scene Hierarchy", &sceneHierarchy)) {
+				mHierarchy->SetOpened(sceneHierarchy);
 			}
 
 			ImGui::PopStyleVar();

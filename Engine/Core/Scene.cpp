@@ -27,37 +27,38 @@ namespace Cosmos::Engine
 	{
 	}
 
-	Shared<Entity>& Scene::CreateEntity(std::string name)
+	Entity* Scene::CreateEntity(std::string name)
 	{
 		entt::entity handle = mRegistry.create();
-		Shared<Entity> entity = CreateShared<Entity>(this, handle);
-
+		Entity* entity = new Entity(this, handle);
+		
 		// create the id component
 		entity->AddComponent<IDComponent>();
 		entity->GetComponent<IDComponent>().id = CreateShared<ID>();
-
+		
 		// create the name component
 		entity->AddComponent<NameComponent>();
 		entity->GetComponent<NameComponent>().name = name;
-
+		
 		// inserts the entity id into our library of registered entities
 		std::string idStr = std::to_string(entity->GetComponent<IDComponent>().id->GetValue());
-
+		
 		if (mEntities.Exists(idStr.c_str())) {
-			COSMOS_LOG(Logger::Error, "The entity creation process has generated an already-in-use id and will return it's entity instead.");
-			entity.reset();
+			COSMOS_LOG(Logger::Error, "The entity creation process has generated an already-in-use id.");
 		}
-
+		
 		else {
 			mEntities.Insert(idStr.c_str(), entity);
 		}
-
+		
 		// returns a reference to the newly created entity
 		return mEntities.GetRef(idStr.c_str());
 	}
 
-	void Scene::DestroyEntity(Shared<Entity> entity)
+	void Scene::DestroyEntity(Entity* entity)
 	{
+		std::string idStr = std::to_string(entity->GetComponent<IDComponent>().id->GetValue());
+
 		if (entity->HasComponent<IDComponent>()) {
 			entity->RemoveComponent<IDComponent>();
 		}
@@ -70,11 +71,11 @@ namespace Cosmos::Engine
 			entity->RemoveComponent<TransformComponent>();
 		}
 
-		std::string strId = std::to_string(entity->GetComponent<IDComponent>().id->GetValue());
-		mEntities.Erase(strId.c_str());
+		mEntities.Erase(idStr.c_str());
+		delete entity;
 	}
 
-	Shared<Entity>& Scene::FindEntity(uint64_t id)
+	Entity* Scene::FindEntity(uint64_t id)
 	{
 		std::string strId = std::to_string(id);
 

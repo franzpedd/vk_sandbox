@@ -4,7 +4,7 @@
 
 #include <iostream>
 
-int main(int argc, char* argv)
+int main(int argc, char* argv[])
 {
     // setup initial settings
     auto settings = Cosmos::Engine::ProjectSettings::Read("Settings.ini");

@@ -8,6 +8,7 @@ namespace Cosmos::Editor { class DebugWindow; }
 namespace Cosmos::Editor { class Explorer; }
 namespace Cosmos::Editor { class ImDemo; }
 namespace Cosmos::Editor { class Viewport; }
+namespace Cosmos::Editor { class Hierarchy; }
 
 namespace Cosmos::Editor
 {
@@ -38,5 +39,6 @@ namespace Cosmos::Editor
 		Explorer* mExplorer = nullptr;
 		ImDemo* mImDemo = nullptr;
 		Viewport* mViewport = nullptr;
+		Hierarchy* mHierarchy = nullptr;
 	};
 }

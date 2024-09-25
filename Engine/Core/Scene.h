@@ -26,7 +26,7 @@ namespace Cosmos::Engine
 		inline entt::registry& GetEntityRegistryRef() { return mRegistry; }
 
 		// returns a reference to the library of entities 
-		inline Library<Shared<Entity>>& GetEntityLibraryRef() { return mEntities; }
+		inline Library<Entity*>& GetEntityLibraryRef() { return mEntities; }
 
 	public:
 
@@ -50,18 +50,18 @@ namespace Cosmos::Engine
 	public:
 
 		// creates and returns an entity
-		Shared<Entity>& CreateEntity(std::string name);
+		Entity* CreateEntity(std::string name);
 
 		// destroys an entity
-		void DestroyEntity(Shared<Entity> entity);
+		void DestroyEntity(Entity* entity);
 
 		// finds an entity by it's unique identifier number
-		Shared<Entity>& FindEntity(uint64_t id);
+		Entity* FindEntity(uint64_t id);
 
 	private:
 
 		Datafile mSceneData;
 		entt::registry mRegistry;
-		Library<Shared<Entity>> mEntities;
+		Library<Entity*> mEntities;
 	};
 }

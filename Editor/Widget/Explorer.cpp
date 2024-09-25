@@ -54,7 +54,7 @@ namespace Cosmos::Editor
 	{
 		if (mOpened)
 		{
-			ImGui::Begin(ICON_FA_FOLDER " Explorer", &mOpened);
+			ImGui::Begin(ICON_FA_FOLDER " Explorer", nullptr);
 
 			// search box part
 			{

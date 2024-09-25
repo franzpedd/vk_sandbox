@@ -61,7 +61,7 @@ namespace Cosmos
         colors[ImGuiCol_PlotHistogram] = ImGui::ColorConvertU32ToFloat4(BLUE400);
         colors[ImGuiCol_PlotHistogramHovered] = ImGui::ColorConvertU32ToFloat4(BLUE600);
         colors[ImGuiCol_TextSelectedBg] = ImGui::ColorConvertU32ToFloat4((BLUE400 & 0x00FFFFFF) | 0x33000000);
-        colors[ImGuiCol_DragDropTarget] = ImVec4(1.00f, 1.00f, 0.00f, 0.90f);
+        colors[ImGuiCol_DragDropTarget] = ImGui::ColorConvertU32ToFloat4(BLUE400);
         colors[ImGuiCol_NavHighlight] = ImGui::ColorConvertU32ToFloat4((GRAY900 & 0x00FFFFFF) | 0x0A000000);
         colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
         colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
