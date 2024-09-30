@@ -57,7 +57,7 @@ namespace Cosmos::Renderer
 		mInstance = CreateShared<Vulkan::Instance>(settings.enginename, settings.gamename, settings.validations, settings.version, settings.vulkanversion);
 		mDevice = CreateShared<Vulkan::Device>(mInstance, 2);
 		mSwapchain = CreateShared<Vulkan::Swapchain>(mDevice, mRenderpasses);
-
+		
 		mMainRenderpass = mRenderpasses.GetRef("Swapchain");
 		mBuffers.Insert("Camera", CreateShared<Vulkan::Buffer>(mDevice, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, sizeof(Vulkan::CameraBuffer)));
 		
@@ -154,9 +154,10 @@ namespace Cosmos::Renderer
 				Engine::Camera::GetRef().SetAspectRatio(Platform::MainWindow::GetRef().GetAspectRatio());
 				GUI::GetRef().SetImageCount(mSwapchain->GetImageCount());
 
+				COSMOS_LOG(Logger::Trace, "Check if this event is neccessary");
 				int32_t width = (int32_t)mSwapchain->GetExtent().width;
 				int32_t height = (int32_t)mSwapchain->GetExtent().height;
-
+				
 				Shared<Platform::WindowResizeEvent> event = CreateShared<Platform::WindowResizeEvent>(width, height);
 				mApplication->OnEvent(event);
 			}

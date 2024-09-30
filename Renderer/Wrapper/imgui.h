@@ -12,7 +12,7 @@
 #pragma warning(disable : 26495 6263 6001 6255)
 #endif
 
-#include <imguizmo/ImGuizmo.h>
+#include <ImGuizmo.h>
 
 #if defined(PLATFORM_WINDOWS)
 #pragma warning(pop)

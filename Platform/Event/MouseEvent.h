@@ -1,6 +1,7 @@
 #pragma once
 
 #include "EventBase.h"
+#include "Core/Input.h"
 
 namespace Cosmos::Platform
 {
@@ -45,17 +46,17 @@ namespace Cosmos::Platform
     public:
 
         // constructor
-        MouseWheelEvent(int delta) : EventBase("Mouse Wheel", EventType::MouseWheel), mDelta(delta) {}
+        MouseWheelEvent(float delta) : EventBase("Mouse Wheel", EventType::MouseWheel), mDelta(delta) {}
 
         // destructor
         ~MouseWheelEvent() = default;
 
         // returns the delta move
-        inline int GetDelta() const { return mDelta; }
+        inline float GetDelta() const { return mDelta; }
 
     private:
 
-        int mDelta;
+        float mDelta;
     };
 
     class MouseMoveEvent : public EventBase
@@ -63,20 +64,20 @@ namespace Cosmos::Platform
     public:
 
         // constructor
-        MouseMoveEvent(int xOffset, int yOffset) : EventBase("Mouse Move", EventType::MouseMove), mXOffset(xOffset), mYOffset(yOffset) {}
+        MouseMoveEvent(float xOffset, float yOffset) : EventBase("Mouse Move", EventType::MouseMove), mXOffset(xOffset), mYOffset(yOffset) {}
 
         // destructor
         ~MouseMoveEvent() = default;
 
         // returns the new x coodirnate
-        inline int GetXOffset() const { return mXOffset; }
+        inline float GetXOffset() const { return mXOffset; }
 
         // returns the new y coordinates
-        inline int GetYOffset() const { return mYOffset; }
+        inline float GetYOffset() const { return mYOffset; }
 
     private:
 
-        int mXOffset;
-        int mYOffset;
+        float mXOffset;
+        float mYOffset;
     };
 }

@@ -19,7 +19,7 @@ namespace Cosmos::Editor
 
 	void ComponentDisplayer::OnUpdate(Engine::Entity* entity)
 	{
-		if (ImGui::Begin("Components", nullptr, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_HorizontalScrollbar)) {
+		if (ImGui::Begin(ICON_FA_PUZZLE_PIECE " Components", nullptr, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_HorizontalScrollbar)) {
 		
 			// disconsider invalid entities
 			if (entity == nullptr) {

@@ -18,7 +18,7 @@
 #include <Platform/Core/MainWindow.h>
 #include <Platform/Event/EventBase.h>
 
-#include <backends/imgui_impl_sdl2.cpp>
+#include <backends/imgui_impl_glfw.cpp>
 #include <backends/imgui_impl_vulkan.cpp>
 
 namespace Cosmos::Renderer
@@ -26,6 +26,16 @@ namespace Cosmos::Renderer
 	static GUI* s_Instance = nullptr;
 	static ImFont* sIconFA = nullptr;
 	static ImFont* sIconLC = nullptr;
+
+	static int IMPL_CreateVulkanSurface(ImGuiViewport* viewport, ImU64 instance, const void* allocator, ImU64* surface)
+	{
+		ImGui_ImplGlfw_Data* bd = ImGui_ImplGlfw_GetBackendData();
+		ImGui_ImplGlfw_Data* vd = (ImGui_ImplGlfw_Data*)viewport->PlatformUserData;
+		IM_UNUSED(bd);
+		IM_ASSERT(bd->ClientApi == GlfwClientApi_Vulkan);
+		VkResult err = glfwCreateWindowSurface((VkInstance)instance, vd->Window, (const VkAllocationCallbacks*)allocator, (VkSurfaceKHR*)surface);
+		return (int)err;
+	}
 
 	void GUI::Initialize()
 	{
@@ -66,7 +76,7 @@ namespace Cosmos::Renderer
 		auto& renderer = Context::GetRef();
 		vkDeviceWaitIdle(renderer.GetDevice()->GetLogicalDevice());
 		ImGui_ImplVulkan_Shutdown();
-		ImGui_ImplSDL2_Shutdown();
+		ImGui_ImplGlfw_Shutdown();
 
 		for (auto& widget : mWidgets.GetElementsRef()) {
 			delete widget;
@@ -80,7 +90,7 @@ namespace Cosmos::Renderer
 	void GUI::OnUpdate()
 	{
 		ImGui_ImplVulkan_NewFrame();
-		ImGui_ImplSDL2_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 		ImGuizmo::BeginFrame();
 
@@ -142,11 +152,6 @@ namespace Cosmos::Renderer
 		for (auto& widget : mWidgets.GetElementsRef()) {
 			widget->OnEvent(event);
 		}
-	}
-
-	void GUI::HandleInputEvent(SDL_Event* e)
-	{
-		ImGui_ImplSDL2_ProcessEvent(e);
 	}
 
 	void GUI::ToggleCursor(bool hide)
@@ -346,8 +351,7 @@ namespace Cosmos::Renderer
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
-		if (io.BackendFlags | ImGuiBackendFlags_PlatformHasViewports && io.BackendFlags | ImGuiBackendFlags_RendererHasViewports)
-		{
+		if (io.BackendFlags | ImGuiBackendFlags_PlatformHasViewports && io.BackendFlags | ImGuiBackendFlags_RendererHasViewports) {
 			io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 		}
 
@@ -404,7 +408,8 @@ namespace Cosmos::Renderer
 
 		// sdl and vulkan initialization
 		ImGui::CreateContext();
-		ImGui_ImplSDL2_InitForVulkan(Platform::MainWindow::GetRef().GetNativeWindow());
+		ImGui::GetPlatformIO().Platform_CreateVkSurface = IMPL_CreateVulkanSurface;
+		ImGui_ImplGlfw_InitForVulkan(Platform::MainWindow::GetRef().GetNativeWindow(), true);
 
 		ImGui_ImplVulkan_InitInfo initInfo = {};
 		initInfo.Instance = renderer.GetInstance()->GetInstance();

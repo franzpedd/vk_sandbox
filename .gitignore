@@ -1,11 +1,13 @@
-# extensions
+# Files
+Build/premake5.exe
+
+# Extensions
+*.spv
 *.sln
 *.vcxproj
-*.vcxproj.filters
 *.vcxproj.user
+*.vcxproj.filters
 
-# paths
-.vs
+# Paths
 Build/.vs
 Build/Bin
-Thirdparty

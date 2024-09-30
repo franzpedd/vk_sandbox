@@ -19,13 +19,24 @@ project "Engine"
         "%{paths.Workspace}",
         "%{paths.Engine}",
         --
-        "%{paths.GLM}",
-        "%{paths.Entt}"
+        "%{paths.glm}",
+        "%{paths.entt}",
+        --
+        "%{paths.Common}",
+        "%{paths.Renderer}",
+        "%{paths.Platform}"
     }
 
     defines
     {
         "RENDERER_VULKAN" -- allows the access to vulkan code on Renderer project
+    }
+
+    links
+    {
+        "Common",
+        "Renderer",
+        "Platform"
     }
     
     filter "configurations:Debug"

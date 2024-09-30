@@ -6,13 +6,14 @@
 #include <Platform/Core/MainWindow.h>
 
 #include <set>
+#include <GLFW/glfw3.h>
 
 namespace Cosmos::Renderer::Vulkan
 {
 	Device::Device(Shared<Instance> instance, uint32_t samples)
 		: mInstance(instance)
 	{
-		Platform::MainWindow::GetRef().CreateSurface(instance->GetInstance(), &(void*&)mSurface);
+		COSMOS_ASSERT(glfwCreateWindowSurface(mInstance->GetInstance(), Platform::MainWindow::GetRef().GetNativeWindow(), nullptr, &mSurface) == VK_SUCCESS, "Failed to create Surface");
 		SelectPhysicalDevice();
 
 		// get physical device properties

@@ -298,7 +298,6 @@ namespace Cosmos::Renderer::Vulkan
 	void Swapchain::Recreate()
 	{
 		Platform::MainWindow::GetRef().HintResize(false);
-		Platform::MainWindow::GetRef().StaleResizeFramebuffer();
 
 		vkDeviceWaitIdle(mDevice->GetLogicalDevice());
 

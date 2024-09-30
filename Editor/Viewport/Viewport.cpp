@@ -8,6 +8,7 @@
 #include <Renderer/Core/Context.h>
 #include <Renderer/Core/Defines.h>
 #include <Renderer/GUI/GUI.h>
+#include <Renderer/GUI/Icon.h>
 #include <Renderer/Vulkan/Device.h>
 #include <Renderer/Vulkan/Renderpass.h>
 #include <Renderer/Vulkan/Swapchain.h>
@@ -40,7 +41,7 @@ namespace Cosmos::Editor
 
 	void Viewport::OnUpdate()
 	{
-		if (ImGui::Begin("Viewport", nullptr /*, ImGuiWindowFlags_MenuBar*/))
+		if (ImGui::Begin(ICON_FA_CAMERA " Viewport", nullptr /*, ImGuiWindowFlags_MenuBar*/))
 		{
 			ImGui::Image(mDescriptorSets[Renderer::Context::GetRef().GetCurrentFrame()], ImGui::GetContentRegionAvail());
 		

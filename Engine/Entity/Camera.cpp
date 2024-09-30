@@ -91,7 +91,7 @@ namespace Cosmos::Engine
 				// avoid scene flip
 				if (mRotation.x >= 89.0f) mRotation.x = 89.0f;
 				if (mRotation.x <= -89.0f) mRotation.x = -89.0f;
-
+				
 				// reset rotation on 360 degrees
 				if (mRotation.x >= 360.0f) mRotation.x = 0.0f;
 				if (mRotation.x <= -360.0f) mRotation.x = 0.0f;
@@ -124,7 +124,7 @@ namespace Cosmos::Engine
 				if (key == Platform::KEY_S && mShouldMove) mMovingBackward = true;
 				if (key == Platform::KEY_A && mShouldMove) mMovingLeft = true;
 				if (key == Platform::KEY_D && mShouldMove) mMovingRight = true;
-				if (key == Platform::KEY_LSHIFT && mShouldMove) mShiftPressed = true;
+				if (key == Platform::KEY_LEFT_SHIFT && mShouldMove) mShiftPressed = true;
 
 				break;
 			}
@@ -138,7 +138,7 @@ namespace Cosmos::Engine
 				if (key == Platform::KEY_S && mShouldMove) mMovingBackward = false;
 				if (key == Platform::KEY_A && mShouldMove) mMovingLeft = false;
 				if (key == Platform::KEY_D && mShouldMove) mMovingRight = false;
-				if (key == Platform::KEY_LSHIFT && mShouldMove) mShiftPressed = false;
+				if (key == Platform::KEY_LEFT_SHIFT && mShouldMove) mShiftPressed = false;
 
 				break;
 			}

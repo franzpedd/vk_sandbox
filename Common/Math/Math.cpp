@@ -27,7 +27,7 @@ namespace Cosmos
         localMatrix[3] = glm::vec4(0, 0, 0, localMatrix[3].w);
 
         // handle scale
-        glm::vec3 row[3], Pdum3;
+        glm::vec3 row[3];
         for (glm::length_t i = 0; i < 3; ++i)
             for (glm::length_t j = 0; j < 3; ++j)
                 row[i][j] = localMatrix[i][j];
@@ -43,7 +43,7 @@ namespace Cosmos
         // at this point, the matrix (in rows[]) is orthonormal.
         // check for a coordinate system flip. If the determinant is -1, then negate the matrix and the scaling factors.
 #if 0
-        Pdum3 = glm::cross(row[1], row[2]); // v3Cross(row[1], row[2], Pdum3);
+        glm::vec3 Pdum3 = glm::cross(row[1], row[2]); // v3Cross(row[1], row[2], Pdum3);
         if (glm::dot(row[0], Pdum3) < 0)
         {
             for (glm::length_t i = 0; i < 3; i++)

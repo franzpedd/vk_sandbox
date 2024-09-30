@@ -19,7 +19,12 @@ project "Common"
         "%{paths.Workspace}",
         "%{paths.Common}",
         --
-        "%{paths.GLM}"
+        "%{paths.glm}"
+    }
+
+    links
+    {
+        
     }
 
     if os.host() == "windows" then

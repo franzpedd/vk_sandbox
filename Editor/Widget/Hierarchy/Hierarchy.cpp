@@ -37,7 +37,7 @@ namespace Cosmos::Editor
 	{
 		if (mOpened)
 		{
-			ImGui::Begin("Hierarchy", nullptr);
+			ImGui::Begin(ICON_FA_LIST " Hierarchy", nullptr);
 
 			DisplayRootMenu();
 			DragAndDropTarget(mRoot);

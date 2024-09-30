@@ -17,18 +17,22 @@ project "Editor"
     includedirs
     {
         "%{paths.Workspace}",
+        "%{paths.Vulkan}",
         "%{paths.Editor}",
+        --
+        "%{paths.entt}",
+        "%{paths.glfw}",
+        "%{paths.glm}",
+        "%{paths.imgui}",
+        "%{paths.imguizmo}",
+        "%{paths.stb}",
+        "%{paths.volk}",
+        "%{paths.vma}",
         --
         "%{paths.Common}",
         "%{paths.Platform}",
-        "%{paths.Renderer}", 
-        "%{paths.Engine}", 
-        --
-        "%{paths.GLM}",
-        "%{paths.Volk}",
-        "%{paths.VMA}",
-        "%{paths.ImGui}",
-        "%{paths.Entt}"
+        "%{paths.Renderer}",
+        "%{paths.Engine}"
     }
 
     defines
@@ -38,38 +42,21 @@ project "Editor"
 
     links
     {
-        "ImGui",
         "Common",
-        "Renderer",
         "Platform",
+        "Renderer",
         "Engine"
     }
 
-    -- windows only
     if os.host() == "windows" then
         defines
         {
             "_CRT_SECURE_NO_WARNINGS"
         }
-
-        includedirs
-        {
-            os.getenv("VULKAN_SDK") .. "/Include" -- vulkan
-        }
-    end
-
-    -- linux only
-    if os.host() == "linux" then
-        links
-        {
-            "SDL2",
-            "vulkan",
-            "shaderc_shared"
-        }
     end
 
     filter "configurations:Debug"
-        defines { "EDITOR_DEBUG"}
+        defines { "EDITOR_DEBUG" }
         runtime "Debug"
         symbols "On"
 

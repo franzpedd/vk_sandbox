@@ -1,6 +1,7 @@
 #pragma once
 
 #include "EventBase.h"
+#include "Core/Input.h"
 
 namespace Cosmos::Platform
 {

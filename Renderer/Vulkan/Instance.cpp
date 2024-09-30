@@ -103,11 +103,9 @@ namespace Cosmos::Renderer::Vulkan
 	std::vector<const char*> Instance::GetRequiredExtensions()
 	{
 		uint32_t count = 0;
-		Platform::MainWindow::GetRef().GetInstanceExtensions(&count, nullptr);
+		const char** glfwExtensions = Platform::MainWindow::GetRef().GetInstanceExtensions(&count);
 
-		std::vector<const char*> extensions(count);
-		Platform::MainWindow::GetRef().GetInstanceExtensions(&count, extensions.data());
-
+		std::vector<const char*> extensions(glfwExtensions, glfwExtensions + count);
 		extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 #if defined PLATFORM_APPLE
 		extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);

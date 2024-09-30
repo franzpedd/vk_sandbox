@@ -3,6 +3,7 @@ project "Renderer"
     kind "StaticLib"
     language "C++"
     cppdialect "C++17"
+    staticruntime "On"
 
     targetdir(paths.Binary)
     objdir(paths.Temp)
@@ -17,12 +18,18 @@ project "Renderer"
     {
         "%{paths.Workspace}",
         "%{paths.Renderer}",
+        "%{paths.Vulkan}",
         --
-        "%{paths.GLM}",
-        "%{paths.Volk}",
-        "%{paths.VMA}",
-        "%{paths.STB}",
-        "%{paths.ImGui}"
+        "%{paths.entt}",
+        "%{paths.glfw}",
+        "%{paths.glm}",
+        "%{paths.imgui}",
+        "%{paths.imguizmo}",
+        "%{paths.stb}",
+        "%{paths.volk}",
+        "%{paths.vma}",
+        --
+        "%{paths.Common}"
     }
 
     defines
@@ -32,46 +39,13 @@ project "Renderer"
 
     links
     {
-        "Common",
-        "ImGui"
+        "imgui",
+        "Common"
     }
 
-    -- windows only
     if os.host() == "windows" then
-        staticruntime "On"
-
-        includedirs
-        {
-            os.getenv("VULKAN_SDK") .. "/Include",  -- vulkan
-            "../Thirdparty/sdl2/sdl2/include"       -- sdl path, for ui 
-        }
-
-        links
-        {
-            os.getenv("VULKAN_SDK") .. "/Lib/shaderc_shared.lib",   -- shaderc
-        }
-
-        defines
-        {
-            "_CRT_SECURE_NO_WARNINGS"
-        }
-
-        disablewarnings
-        { 
-           "26819"
-        }
-
-        linkoptions
-        {
-            "/ignore:4006" -- sdl includes stuff already defined on shaderc
-        }
-    end
-
-    if os.host() == "linux" then
-        links
-        {
-            "shaderc_shared"
-        }
+        links { os.getenv("VULKAN_SDK") .. "/Lib/shaderc_shared.lib" }
+        disablewarnings { "26439" }
     end
 
     filter "configurations:Debug"

@@ -57,9 +57,6 @@ namespace Cosmos::Renderer
 		// called when an event happens
 		void OnEvent(Shared<Platform::EventBase> event);
 
-		// sends input events to user interface
-		void HandleInputEvent(SDL_Event* e);
-
 		// toggles the cursor on and off
 		void ToggleCursor(bool hide);
 

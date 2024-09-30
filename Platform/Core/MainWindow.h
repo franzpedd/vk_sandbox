@@ -1,8 +1,8 @@
 #pragma once
 
 // forward declarations
-struct SDL_Window;
-struct SDL_Surface;
+struct GLFWwindow;
+namespace Cosmos::Platform { class EventBase; }
 namespace Cosmos::Engine { class Application; }
 
 namespace Cosmos::Platform
@@ -39,19 +39,19 @@ namespace Cosmos::Platform
 	public:
 
 		// returns the pointer to the native window
-		inline SDL_Window* GetNativeWindow() { return mNativeWindow; }
-
-		// sets the should quit variable to a value
-		inline void HintQuit(bool value) { mShouldQuit = value; }
-
-		// returns if window close event was called
-		inline bool ShouldQuit() { return mShouldQuit; }
+		inline GLFWwindow* GetNativeWindow() { return mNativeWindow; }
 
 		// sets the should resize variable to a value
 		inline void HintResize(bool value) { mShouldResizeWindow = value; }
 
 		// returns if window resize event was called
 		inline bool ShouldResize() { return mShouldResizeWindow; }
+
+		// sets the should resize variable to a value
+		inline void HintQuit(bool value) { mShouldQuit = value; }
+
+		// returns if window close event was called
+		inline bool ShouldQuit() { return mShouldQuit; }
 
 	public:
 
@@ -64,16 +64,13 @@ namespace Cosmos::Platform
 		// returns the current window aspect ratio
 		float GetAspectRatio();
 
-		// gets the relative position with the monitor 
-		void GetRelativePosition(int* x, int* y);
+		// sets the callbacks from glfw
+		void SetCallbacks();
 
 	public: // vulkan
 
 		// returns the instance extensions used by the windows
-		void GetInstanceExtensions(unsigned int* count, const char** names);
-
-		// creates a window surface for drawing into it
-		void CreateSurface(void* instance, void** surface);
+		const char** GetInstanceExtensions(unsigned int* count);
 
 		// returns the framebuffer size
 		void GetFrameBufferSize(int* width, int* height);
@@ -84,9 +81,10 @@ namespace Cosmos::Platform
 	private:
 
 		Engine::Application* mApplication;
-		SDL_Window* mNativeWindow = nullptr;
-		SDL_Surface* mIconSurface = nullptr;
+		GLFWwindow* mNativeWindow = nullptr;
 		bool mShouldQuit = false;
 		bool mShouldResizeWindow = false;
+		float mLastCursorPosX = 0.0f;
+		float mLastCursorPosY = 0.0f;
 	};
 }
