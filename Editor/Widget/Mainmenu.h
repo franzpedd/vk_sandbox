@@ -16,6 +16,14 @@ namespace Cosmos::Editor
 	{
 	public:
 
+		enum MenuAction 
+		{
+			None = 0,
+			SceneNew, SceneOpen, SceneSave, SceneSaveAs
+		};
+
+	public:
+
 		// constructor
 		Mainmenu(Application* application);
 
@@ -32,6 +40,9 @@ namespace Cosmos::Editor
 		// display each main menu item
 		void DisplayMenuItems();
 
+		// handle menu popups if a menu action was issued
+		void HandleMenuAction();
+
 	private:
 
 		Application* mApplication = nullptr;
@@ -40,5 +51,7 @@ namespace Cosmos::Editor
 		ImDemo* mImDemo = nullptr;
 		Viewport* mViewport = nullptr;
 		Hierarchy* mHierarchy = nullptr;
+
+		MenuAction mMenuAction = MenuAction::None;
 	};
 }

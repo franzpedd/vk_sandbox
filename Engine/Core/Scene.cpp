@@ -86,4 +86,67 @@ namespace Cosmos::Engine
 
 		return mEntities.GetRef(strId.c_str());
 	}
+
+	void Scene::Deserialize(Datafile& data)
+	{
+		// cleanup the current scene
+		for (auto& ent : mEntities.GetAllRefs()) {
+			DestroyEntity(ent.second);
+		}
+
+		mSceneData = data;
+
+		// deserialize all components the entity may have
+		for (size_t i = 0; i < data["Entities"].GetChildrenCount(); i++) {
+			Datafile entityData = data["Entities"][i];
+			Entity* entity = new Entity(this, mRegistry.create());
+
+			IDComponent::Deserialize(entity, entityData);
+			NameComponent::Deserialize(entity, entityData);
+			TransformComponent::Deserialize(entity, entityData);
+
+			// inserts the entity id into our library of registered entities
+			std::string idStr = std::to_string(entity->GetComponent<IDComponent>().id->GetValue());
+			mEntities.Insert(idStr, entity);
+		}
+	}
+
+	Datafile Scene::Serealize()
+	{
+		Datafile save;
+		save["Name"].SetString(mSceneData["Name"].GetString());
+
+		for (auto& entity : mEntities.GetAllRefs()) {
+			if (entity.second == nullptr) {
+				continue;
+			}
+
+			IDComponent::Serialize(entity.second, save);
+			NameComponent::Serialize(entity.second, save);
+			TransformComponent::Serialize(entity.second, save);
+		}
+
+		return save;
+	}
+
+	Datafile Scene::CreateDefaultScene()
+	{
+		Datafile save;
+		save["Name"].SetString("Default");
+
+		return save;
+	}
+
+	bool Scene::IsDefaultScene(Datafile& sceneData)
+	{
+		Datafile defaultScene = CreateDefaultScene();
+
+		bool result = true;
+		result &= defaultScene["Name"].GetString().compare(sceneData["Name"].GetString()) == 0; // has the same name
+		result &= defaultScene.GetChildrenCount() == sceneData.GetChildrenCount(); // has the same number of properties
+		
+		// we're not checking all possibilities because it's a development stage
+		// however this is pretty much enought to qualify the scene as the default one because Default.scene is supposed to be unique
+		return result;
+	}
 }

@@ -22,6 +22,9 @@ namespace Cosmos::Engine
 		// destructor
 		~Scene();
 
+		// returns a reference to the scene data
+		inline Datafile& GetSceneDataRef() { return mSceneData; }
+
 		// returns a reference to the entt registry
 		inline entt::registry& GetEntityRegistryRef() { return mRegistry; }
 
@@ -31,7 +34,7 @@ namespace Cosmos::Engine
 	public:
 
 		// returns the scene's name
-		inline std::string Getname() { return mSceneData["Name"].GetString(); }
+		inline std::string GetName() { return mSceneData["Name"].GetString(); }
 
 		// sets the scene's name
 		inline void SetName(std::string name) { mSceneData["Name"].SetString(name); }
@@ -57,6 +60,22 @@ namespace Cosmos::Engine
 
 		// finds an entity by it's unique identifier number
 		Entity* FindEntity(uint64_t id);
+
+	public:
+
+		// loads a new scene
+		void Deserialize(Datafile& data);
+
+		// saves the current scene into a datafile
+		Datafile Serealize();
+
+	public:
+
+		// creates a datafile containing the default scene
+		static Datafile CreateDefaultScene();
+
+		// checks if Datafile is equivalent to the default scene
+		static bool IsDefaultScene(Datafile& sceneData);
 
 	private:
 

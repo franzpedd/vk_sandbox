@@ -15,10 +15,10 @@ namespace Cosmos::Engine
 		Shared<ID> id;
 
 		// saves the component into a data file
-		static void Serialize(Shared<Entity> entity, Datafile& dataFile);
+		static void Serialize(Entity* entity, Datafile& dataFile);
 
 		// loads the component into the entity from data file
-		static void Deserialize(Shared<Entity> entity, Datafile& dataFile);
+		static void Deserialize(Entity* entity, Datafile& dataFile);
 	};
 
 	struct NameComponent
@@ -26,10 +26,10 @@ namespace Cosmos::Engine
 		std::string name;
 
 		// saves the component into a data file
-		static void Serialize(Shared<Entity> entity, Datafile& dataFile);
+		static void Serialize(Entity* entity, Datafile& dataFile);
 
 		// loads the component into the entity from data file
-		static void Deserialize(Shared<Entity> entity, Datafile& dataFile);
+		static void Deserialize(Entity* entity, Datafile& dataFile);
 	};
 
 	struct TransformComponent
@@ -39,9 +39,9 @@ namespace Cosmos::Engine
 		glm::vec3 scale = glm::vec3(1.0f);
 
 		// saves the component into a data file
-		static void Serialize(Shared<Entity> entity, Datafile& dataFile);
+		static void Serialize(Entity* entity, Datafile& dataFile);
 
 		// loads the component into the entity from data file
-		static void Deserialize(Shared<Entity> entity, Datafile& dataFile);
+		static void Deserialize(Entity* entity, Datafile& dataFile);
 	};
 }

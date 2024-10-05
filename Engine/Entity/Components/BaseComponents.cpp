@@ -4,32 +4,32 @@
 
 namespace Cosmos::Engine
 {
-	void IDComponent::Serialize(Shared<Entity> entity, Datafile& dataFile)
+	void IDComponent::Serialize(Entity* entity, Datafile& dataFile)
 	{
 		std::string uuid = std::to_string(entity->GetComponent<IDComponent>().id->GetValue());
 		dataFile["Entities"][uuid]["ID"].SetString(uuid);
 	}
 
-	void IDComponent::Deserialize(Shared<Entity> entity, Datafile& dataFile)
+	void IDComponent::Deserialize(Entity* entity, Datafile& dataFile)
 	{
 		std::string id = dataFile["ID"].GetString();
 		entity->AddComponent<IDComponent>();
 		entity->GetComponent<IDComponent>().id = CreateUnique<Cosmos::ID>(std::stoull(id, 0, 10));
 	}
 
-	void NameComponent::Serialize(Shared<Entity> entity, Datafile& dataFile)
+	void NameComponent::Serialize(Entity* entity, Datafile& dataFile)
 	{
 		std::string uuid = std::to_string(entity->GetComponent<IDComponent>().id->GetValue());
 		dataFile["Entities"][uuid]["Name"].SetString(entity->GetComponent<NameComponent>().name);
 	}
 
-	void NameComponent::Deserialize(Shared<Entity> entity, Datafile& dataFile)
+	void NameComponent::Deserialize(Entity* entity, Datafile& dataFile)
 	{
 		std::string name = dataFile["Name"].GetString();
 		entity->AddComponent<NameComponent>(name);
 	}
 
-	void TransformComponent::Serialize(Shared<Entity> entity, Datafile& dataFile)
+	void TransformComponent::Serialize(Entity* entity, Datafile& dataFile)
 	{
 		if (entity->HasComponent<TransformComponent>()) {
 			std::string uuid = std::to_string(entity->GetComponent<IDComponent>().id->GetValue());
@@ -50,7 +50,7 @@ namespace Cosmos::Engine
 		}
 	}
 
-	void TransformComponent::Deserialize(Shared<Entity> entity, Datafile& dataFile)
+	void TransformComponent::Deserialize(Entity* entity, Datafile& dataFile)
 	{
 		// check if transform exists
 		if (dataFile.Exists("Transform")) {
