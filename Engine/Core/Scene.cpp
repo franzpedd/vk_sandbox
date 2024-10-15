@@ -1,18 +1,23 @@
 #include "Scene.h"
 
 #include "Entity/Entity.h"
+#include "Entity/Prefab.h"
 #include "Entity/Components/BaseComponents.h"
 #include <Common/Debug/Logger.h>
+#include <Common/File/Filesystem.h>
+#include <Common/Math/ID.h>
 
 namespace Cosmos::Engine
 {
-	Scene::Scene(const Datafile sceneData)
-		: mSceneData(sceneData)
+	Scene::Scene(std::string name)
+		: mName(name)
 	{
+		mRootPrefab = new Prefab(this, "Root Prefab");
 	}
 
 	Scene::~Scene()
 	{
+		delete mRootPrefab;
 	}
 
 	void Scene::OnUpdate(double timestep)
@@ -27,126 +32,45 @@ namespace Cosmos::Engine
 	{
 	}
 
-	Entity* Scene::CreateEntity(std::string name)
+	void Scene::ClearScene()
 	{
-		entt::entity handle = mRegistry.create();
-		Entity* entity = new Entity(this, handle);
-		
-		// create the id component
-		entity->AddComponent<IDComponent>();
-		entity->GetComponent<IDComponent>().id = CreateShared<ID>();
-		
-		// create the name component
-		entity->AddComponent<NameComponent>();
-		entity->GetComponent<NameComponent>().name = name;
-		
-		// inserts the entity id into our library of registered entities
-		std::string idStr = std::to_string(entity->GetComponent<IDComponent>().id->GetValue());
-		
-		if (mEntities.Exists(idStr.c_str())) {
-			COSMOS_LOG(Logger::Error, "The entity creation process has generated an already-in-use id.");
+		// erase the root's children, this is recursive and erases it's children
+		for (auto& child : mRootPrefab->GetChildrenRef()) {
+			mRootPrefab->EraseChild(child.second, false);
 		}
-		
-		else {
-			mEntities.Insert(idStr.c_str(), entity);
+
+		// erase all entities the root has
+		for (auto& entity : mRootPrefab->GetEntitiesRef()) {
+			mRootPrefab->EraseEntity(entity.second, false);
 		}
-		
-		// returns a reference to the newly created entity
-		return mEntities.GetRef(idStr.c_str());
+
+		mRootPrefab->GetChildrenRef().clear();
+		mRootPrefab->GetEntitiesRef().clear();
 	}
 
-	void Scene::DestroyEntity(Entity* entity)
+	Datafile Scene::Serialize()
 	{
-		std::string idStr = std::to_string(entity->GetComponent<IDComponent>().id->GetValue());
-
-		if (entity->HasComponent<IDComponent>()) {
-			entity->RemoveComponent<IDComponent>();
+		Datafile scene;
+		scene["Name"].SetString(mName);
+		
+		for (auto& child : mRootPrefab->GetChildrenRef()) {
+			Prefab::Serialize(child.second, scene["Hierarchy"]["Prefabs"]);
 		}
 		
-		if (entity->HasComponent<NameComponent>()) {
-			entity->RemoveComponent<NameComponent>();
+		for (auto& entity : mRootPrefab->GetEntitiesRef()) {
+			entity.second->Serialize(scene["Hierarchy"]["Entities"]);
 		}
 		
-		if (entity->HasComponent<TransformComponent>()) {
-			entity->RemoveComponent<TransformComponent>();
-		}
-
-		mEntities.Erase(idStr.c_str());
-		delete entity;
+		return scene;
 	}
 
-	Entity* Scene::FindEntity(uint64_t id)
+	void Scene::Deserialize(Datafile& scene)
 	{
-		std::string strId = std::to_string(id);
+		ClearScene();
 
-		if (!mEntities.Exists(strId.c_str())) {
-			COSMOS_LOG(Logger::Error, "Could not find any entity with id %llu, returning empty", id);
-			std::abort();
-		}
+		// we must re-create prefabs and entities as the file goes
+		mName = scene["Name"].GetString();
 
-		return mEntities.GetRef(strId.c_str());
-	}
-
-	void Scene::Deserialize(Datafile& data)
-	{
-		// cleanup the current scene
-		for (auto& ent : mEntities.GetAllRefs()) {
-			DestroyEntity(ent.second);
-		}
-
-		mSceneData = data;
-
-		// deserialize all components the entity may have
-		for (size_t i = 0; i < data["Entities"].GetChildrenCount(); i++) {
-			Datafile entityData = data["Entities"][i];
-			Entity* entity = new Entity(this, mRegistry.create());
-
-			IDComponent::Deserialize(entity, entityData);
-			NameComponent::Deserialize(entity, entityData);
-			TransformComponent::Deserialize(entity, entityData);
-
-			// inserts the entity id into our library of registered entities
-			std::string idStr = std::to_string(entity->GetComponent<IDComponent>().id->GetValue());
-			mEntities.Insert(idStr, entity);
-		}
-	}
-
-	Datafile Scene::Serealize()
-	{
-		Datafile save;
-		save["Name"].SetString(mSceneData["Name"].GetString());
-
-		for (auto& entity : mEntities.GetAllRefs()) {
-			if (entity.second == nullptr) {
-				continue;
-			}
-
-			IDComponent::Serialize(entity.second, save);
-			NameComponent::Serialize(entity.second, save);
-			TransformComponent::Serialize(entity.second, save);
-		}
-
-		return save;
-	}
-
-	Datafile Scene::CreateDefaultScene()
-	{
-		Datafile save;
-		save["Name"].SetString("Default");
-
-		return save;
-	}
-
-	bool Scene::IsDefaultScene(Datafile& sceneData)
-	{
-		Datafile defaultScene = CreateDefaultScene();
-
-		bool result = true;
-		result &= defaultScene["Name"].GetString().compare(sceneData["Name"].GetString()) == 0; // has the same name
-		result &= defaultScene.GetChildrenCount() == sceneData.GetChildrenCount(); // has the same number of properties
-		
-		// we're not checking all possibilities because it's a development stage
-		// however this is pretty much enought to qualify the scene as the default one because Default.scene is supposed to be unique
-		return result;
+		Prefab::Deserialize(mRootPrefab, this, scene["Hierarchy"]);
 	}
 }

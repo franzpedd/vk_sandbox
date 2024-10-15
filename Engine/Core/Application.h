@@ -27,7 +27,7 @@ namespace Cosmos::Engine
 		inline Shared<Project>& GetProjectRef() { return mProject; }
 
 		// returns the current scene
-		inline Shared<Scene> GetCurrentScene() { return mCurrentScene; }
+		inline Scene* GetCurrentScene() { return mCurrentScene; }
 
 	public:
 
@@ -44,9 +44,9 @@ namespace Cosmos::Engine
 		void OnEvent(Shared<Platform::EventBase> event);
 
 	private:
-		
+
 		Shared<Project> mProject;
 		Unique<Timestep> mTimestep;
-		Shared<Scene> mCurrentScene;
+		Scene* mCurrentScene;
 	};
 }

@@ -1,7 +1,10 @@
 #include "Explorer.h"
 
+#include "Core/Application.h"
+#include <Common/File/Datafile.h>
 #include <Common/File/Filesystem.h>
 #include <Common/Util/Algorithm.h>
+#include <Engine/Core/Scene.h>
 #include <Renderer/GUI/Icon.h>
 #include <Renderer/Vulkan/Texture.h>
 
@@ -9,8 +12,8 @@
 
 namespace Cosmos::Editor
 {
-	Explorer::Explorer()
-		: Widget("Explorer")
+	Explorer::Explorer(Application* application)
+		: Widget("Explorer"), mApplication(application)
 	{
 		// create used resources used by the explorer
 		mCurrentDir = GetAssetsDir();
@@ -158,6 +161,8 @@ namespace Cosmos::Editor
 				ImGui::EndDragDropSource();
 			}
 		}
+
+		DisplayAssetMenu(asset);
 	}
 
 	void Explorer::Refresh(std::string path)
@@ -291,4 +296,34 @@ namespace Cosmos::Editor
 			}
 		}
 	}
+	
+    void Explorer::DisplayAssetMenu(Asset& asset)
+    {
+		if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl)) {
+			return;
+		}
+		
+		ImGui::PushID((&asset));
+		switch (asset.type)
+		{
+			case Asset::Type::Scene:
+			{
+				if (ImGui::BeginPopupContextItem("##RightClickExplorerMesh", ImGuiPopupFlags_MouseButtonRight)) {
+					if (ImGui::MenuItem(ICON_LC_FOLDER " Load")) {
+
+						Datafile scene;
+						Datafile::Read(scene, asset.path.c_str());
+						mApplication->GetCurrentScene()->Deserialize(scene);
+
+					}
+
+					ImGui::EndPopup();
+				}
+				break;
+			}
+
+			default: { break; }
+		}
+		ImGui::PopID();
+    }
 }

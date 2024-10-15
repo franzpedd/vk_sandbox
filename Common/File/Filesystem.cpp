@@ -16,8 +16,12 @@ namespace Cosmos
 		return binDir;
 	}
 
-	// default assets dir
+		// default assets dir
+#if defined _WIN32
 	static std::string s_AssetsDir = "../Data/";
+#else 
+	static std::string s_AssetsDir = "Data/";
+#endif
 
 	std::string GetAssetsDir()
 	{

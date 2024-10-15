@@ -5,8 +5,9 @@
 #include <Common/Debug/Logger.h>
 #include <Platform/Core/MainWindow.h>
 
-#include <set>
 #include <GLFW/glfw3.h>
+#include <cstring>
+#include <set>
 
 namespace Cosmos::Renderer::Vulkan
 {

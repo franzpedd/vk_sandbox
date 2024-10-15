@@ -25,6 +25,9 @@
 //
 //========================================================================
 
+// THIS WAS ADDED BY FRANZPEDD, NOT A CONTRIBUTOR, THEREFORE THIS CODE SUCKS 
+#define _POSIX_C_SOURCE 199309L
+
 #include "internal.h"
 
 #if defined(GLFW_BUILD_POSIX_TIMER)

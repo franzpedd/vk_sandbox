@@ -56,19 +56,24 @@ project "glfw"
     if os.host() == "linux" then
         files
         {
-            "Gglfw/src/egl_context.c",
-            "Gglfw/src/glx_context.c",
+            "glfw/src/egl_context.c",
+            "glfw/src/glx_context.c",
+            "glfw/src/osmesa_context.c",
 
-            "glfw/src/wl_init.c",
+            "glfw/src/x11_init.c",
             "glfw/src/linux_joystick.c",
             "glfw/src/posix_module.c",
-            "glfw/src/wl_monitor.c",
+            "glfw/src/x11_monitor.c",
             "glfw/src/posix_thread.c",
             "glfw/src/posix_time.c",
-            "glfw/src/wl_window.c"
+            "glfw/src/x11_window.c",
+            
+            "glfw/src/posix_poll.c",
+            "glfw/src/xkb_unicode.c"
         }
 
         defines { "_GLFW_X11" }
+        links { "X11" }
     end
 
     if os.host() == "macosx" then

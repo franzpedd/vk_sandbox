@@ -5,15 +5,15 @@ configurations { "Debug", "Release" };
 startproject "Editor";
 
 -- toolset used
-if os.host() == "linux" then toolset("clang") end;
+if os.host() == "linux" then toolset("gcc") end;
 if os.host() == "windows" then toolset("msc") end;
 if os.host() == "macosx" then toolset("clang") end;
 
 -- paths used accross the scripts
 ---- general
 paths = {};
-paths["Temp"]       = "%{wks.location}/Bin/%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}";
-paths["Binary"]     = "%{wks.location}/Bin/temp/%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}";
+paths["Temp"]       = "%{wks.location}/Bin/temp/%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}";
+paths["Binary"]     = "%{wks.location}/Bin/%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}";
 paths["Workspace"]  = "../";
 paths["Vulkan"] = os.getenv("VULKAN_SDK") .. "/Include"
 ---- dependencies

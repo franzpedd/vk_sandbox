@@ -1,5 +1,4 @@
 #pragma once
-#ifdef RENDERER_VULKAN
 #include <Renderer/Wrapper/imgui.h>
 #include <Renderer/Wrapper/vulkan.h>
 
@@ -11,6 +10,7 @@
 
 // forward declarations
 namespace Cosmos::Renderer::Vulkan { class Texture2D; }
+namespace Cosmos::Editor { class Application; }
 
 namespace Cosmos::Editor
 {
@@ -51,10 +51,10 @@ namespace Cosmos::Editor
 	public:
 
 		// constructor
-		Explorer();
+		Explorer(Application* application);
 
 		// destructor
-		~Explorer();
+		virtual ~Explorer();
 
 	public:
 
@@ -77,9 +77,13 @@ namespace Cosmos::Editor
 
 		// reloads the folder's content
 		void Refresh(std::string path);
+		
+		// draws a menu if right mouse is pressed on item
+		void DisplayAssetMenu(Asset& asset);
 
 	private:
 
+		Application* mApplication = nullptr;
 		bool mOpened = true;
 		bool mRecursiveSearch = false;
 		bool mRefreshExplorer = true;
@@ -93,4 +97,3 @@ namespace Cosmos::Editor
 		Asset mParentFolder;
 	};
 }
-#endif

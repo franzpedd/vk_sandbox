@@ -3,7 +3,8 @@ project "Editor"
     kind "ConsoleApp"
     language "C++"
     cppdialect "C++17"
-    staticruntime "On"
+    staticruntime "On" -- affects only windows
+    linkgroups "On" -- affects only linux
 
     targetdir(paths.Binary)
     objdir(paths.Temp)
@@ -42,6 +43,8 @@ project "Editor"
 
     links
     {
+        "glfw",
+        "imgui",
         "Common",
         "Platform",
         "Renderer",
@@ -49,10 +52,13 @@ project "Editor"
     }
 
     if os.host() == "windows" then
-        defines
-        {
-            "_CRT_SECURE_NO_WARNINGS"
-        }
+        defines { "_CRT_SECURE_NO_WARNINGS" }
+        links { os.getenv("VULKAN_SDK") .. "/Lib/shaderc_shared.dll" }
+        disablewarnings { "26439" }
+    end
+
+    if os.host() == "linux" then
+        links { "shaderc_shared", "X11" }
     end
 
     filter "configurations:Debug"

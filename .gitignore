@@ -1,7 +1,9 @@
 # Files
+Build/premake5
 Build/premake5.exe
 
 # Extensions
+*Makefile
 *.spv
 *.sln
 *.vcxproj

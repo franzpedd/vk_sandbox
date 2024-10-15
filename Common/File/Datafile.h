@@ -109,7 +109,6 @@ namespace Cosmos
 	private:
 
 		std::vector<std::string> mContent; // the items of this serializer
-
 		std::vector<std::pair<std::string, Datafile>> mObjectVec; // child nodes of this datafile
 		std::unordered_map<std::string, size_t>  mObjectMap;
 	};

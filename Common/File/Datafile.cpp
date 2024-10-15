@@ -241,14 +241,14 @@ namespace Cosmos
 			// property has children
 			else
 			{
-				writer.file << "\n" << Indentation(writer.indentation, writer.indentationLevel) << prop.first << "\n";
+				writer.file << Indentation(writer.indentation, writer.indentationLevel) << prop.first << "\n";
 				writer.file << Indentation(writer.indentation, writer.indentationLevel) << "{\n";
 				writer.indentationLevel++;
 
 				// recusisvely writes that node
 				WriteRecursively(prop.second, writer);
 
-				writer.file << Indentation(writer.indentation, writer.indentationLevel) << "}\n\n";
+				writer.file << Indentation(writer.indentation, writer.indentationLevel) << "}\n";
 			}
 		}
 

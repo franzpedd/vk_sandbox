@@ -19,6 +19,9 @@
 #pragma warning(pop)
 #endif
 
+#include <cmath>
+#include <cstring>
+
 namespace Cosmos::Renderer::Vulkan
 {
 	Texture2D::Texture2D(std::string path, bool guiImage)

@@ -25,6 +25,10 @@
 //
 //========================================================================
 
+// THIS WAS ADDED BY FRANZPEDD, NOT A CONTRIBUTOR, THEREFORE THIS CODE SUCKS 
+#define _XOPEN_SOURCE 700
+#define _GNU_SOURCE
+
 #include "internal.h"
 
 #if defined(GLFW_BUILD_LINUX_JOYSTICK)

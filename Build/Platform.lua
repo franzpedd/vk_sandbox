@@ -3,8 +3,9 @@ project "Platform"
     kind "StaticLib"
     language "C++"
     cppdialect "C++17"
-    staticruntime "On"
-
+    staticruntime "On" -- affects only windows
+    linkgroups "On" -- affects only linux
+    
     targetdir(paths.Binary)
     objdir(paths.Temp)
 

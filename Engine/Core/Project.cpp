@@ -1,8 +1,6 @@
 #include "Project.h"
 
-#include "Scene.h"
 #include <Common/Debug/Logger.h>
-#include <Common/File/Filesystem.h>
 
 namespace Cosmos::Engine
 {
@@ -44,19 +42,7 @@ namespace Cosmos::Engine
 		if (data.Exists("language")) settings.language = data["language"].GetString();
 		if (data.Exists("gamename")) settings.gamename = data["gamename"].GetString();
 		if (data.Exists("builddate")) settings.builddate = data["builddate"].GetString();
-		if (data.Exists("initialscene")) {
-			if (data["initialscene"].GetString().compare("Default") == 0) {
-				settings.initialscene = Scene::CreateDefaultScene();
-			}
-
-			else {
-				std::string initialScenePath = GetAssetSubDir("Scene");
-				initialScenePath.append("/");
-				initialScenePath.append(data["initialscene"].GetString());
-				initialScenePath.append(".scene");
-				Datafile::Read(settings.initialscene, initialScenePath);
-			}
-		}
+		if (data.Exists("initialscene")) settings.initialscene = data["initialscene"].GetString();
 
 		return settings;
 	}
@@ -80,7 +66,7 @@ namespace Cosmos::Engine
 		data["Project Settings"]["language"].SetString(settings.language);
 		data["Project Settings"]["gamename"].SetString(settings.gamename);
 		data["Project Settings"]["builddate"].SetString(settings.builddate);
-		data["Project Settings"]["initialscene"].SetString(settings.initialscene["Name"].GetString());
+		data["Project Settings"]["initialscene"].SetString(settings.initialscene);
 		//
 		Datafile::Write(data, path);
 	}

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Common/File/Datafile.h>
+#include <cstdint>
 
 namespace Cosmos::Engine
 {
@@ -25,7 +26,7 @@ namespace Cosmos::Engine
 		std::string language = "English";
 		std::string gamename = "Testing";
 		std::string builddate = "Unknown";
-		Datafile initialscene;
+		std::string initialscene = "Empty Scene";
 
 		// parse/read and returns the settings data from a file
 		static ProjectSettings Read(std::string path);

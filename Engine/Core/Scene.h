@@ -2,12 +2,13 @@
 
 #include "Wrapper/Entt.h"
 #include <Common/File/Datafile.h>
-#include <Common/Math/ID.h>
 #include <Common/Util/Library.h>
 #include <Common/Util/Memory.h>
+#include <string>
 
 // forward declarations
 namespace Cosmos::Engine { class Entity; }
+namespace Cosmos::Engine { class Prefab; }
 namespace Cosmos::Platform { class EventBase; }
 
 namespace Cosmos::Engine
@@ -17,27 +18,24 @@ namespace Cosmos::Engine
 	public:
 
 		// constructor
-		Scene(const Datafile sceneData);
+		Scene(std::string name = "Empty Scene");
 
 		// destructor
 		~Scene();
 
-		// returns a reference to the scene data
-		inline Datafile& GetSceneDataRef() { return mSceneData; }
-
 		// returns a reference to the entt registry
 		inline entt::registry& GetEntityRegistryRef() { return mRegistry; }
 
-		// returns a reference to the library of entities 
-		inline Library<Entity*>& GetEntityLibraryRef() { return mEntities; }
+		// returns the root prefab of the scene
+		inline Prefab* GetRootPrefab() { return mRootPrefab; }
 
 	public:
 
 		// returns the scene's name
-		inline std::string GetName() { return mSceneData["Name"].GetString(); }
+		inline std::string GetName() const { return mName; }
 
 		// sets the scene's name
-		inline void SetName(std::string name) { mSceneData["Name"].SetString(name); }
+		inline void SetName(const std::string& name) { mName = name; }
 
 	public:
 
@@ -52,35 +50,21 @@ namespace Cosmos::Engine
 
 	public:
 
-		// creates and returns an entity
-		Entity* CreateEntity(std::string name);
-
-		// destroys an entity
-		void DestroyEntity(Entity* entity);
-
-		// finds an entity by it's unique identifier number
-		Entity* FindEntity(uint64_t id);
+		// erases all contents the scene has
+		void ClearScene();
 
 	public:
 
-		// loads a new scene
-		void Deserialize(Datafile& data);
+		// saves the scene on disk, it gets saved on the scene's folder with "mName.scene" as it's name
+		Datafile Serialize();
 
-		// saves the current scene into a datafile
-		Datafile Serealize();
-
-	public:
-
-		// creates a datafile containing the default scene
-		static Datafile CreateDefaultScene();
-
-		// checks if Datafile is equivalent to the default scene
-		static bool IsDefaultScene(Datafile& sceneData);
+		// reads the scene from disk
+		void Deserialize(Datafile& scene);
 
 	private:
 
-		Datafile mSceneData;
 		entt::registry mRegistry;
-		Library<Entity*> mEntities;
+		std::string mName;
+		Prefab* mRootPrefab;
 	};
 }

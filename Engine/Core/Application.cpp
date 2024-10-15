@@ -5,6 +5,7 @@
 #include "Timestep.h"
 #include "Entity/Camera.h"
 #include <Common/File/Filesystem.h>
+#include <Common/Debug/Logger.h>
 #include <Platform/Core/MainWindow.h>
 #include <Renderer/Core/Context.h>
 #include <Renderer/GUI/GUI.h>
@@ -21,12 +22,13 @@ namespace Cosmos::Engine
 		Camera::Initialize(Platform::MainWindow::GetRef().GetAspectRatio());
 		Renderer::Context::Initialize(this);
 		Renderer::GUI::Initialize();
-		mCurrentScene = CreateShared<Scene>(settings.initialscene);
+		mCurrentScene = new Scene(settings.initialscene);
 		mTimestep = CreateUnique<Timestep>(this);
 	}
 
 	Application::~Application()
 	{
+		delete mCurrentScene;
 		Renderer::GUI::Shutdown();
 		Renderer::Context::Shutdown();
 		Camera::Shutdown();

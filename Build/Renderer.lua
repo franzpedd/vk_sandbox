@@ -3,7 +3,8 @@ project "Renderer"
     kind "StaticLib"
     language "C++"
     cppdialect "C++17"
-    staticruntime "On"
+    staticruntime "On" -- affects only windows
+    linkgroups "On" -- affects only linux
 
     targetdir(paths.Binary)
     objdir(paths.Temp)
@@ -40,12 +41,17 @@ project "Renderer"
     links
     {
         "imgui",
+        "glfw",
         "Common"
     }
 
     if os.host() == "windows" then
-        links { os.getenv("VULKAN_SDK") .. "/Lib/shaderc_shared.lib" }
+        links { os.getenv("VULKAN_SDK") .. "/Lib/shaderc_shared.dll" }
         disablewarnings { "26439" }
+    end
+
+    if os.host() == "linux" then
+        links { "shaderc_shared" }
     end
 
     filter "configurations:Debug"

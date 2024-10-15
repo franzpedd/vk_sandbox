@@ -3,6 +3,7 @@
 #include "Core/Scene.h"
 #include "Wrapper/Entt.h"
 #include <Common/Math/ID.h>
+#include <Common/File/Datafile.h>
 
 namespace Cosmos::Engine
 {
@@ -11,7 +12,7 @@ namespace Cosmos::Engine
 	public:
 
 		// constructor
-		Entity(Scene* scene, entt::entity handle) : mScene(scene), mHandle(handle) {}
+		Entity(Scene* scene, entt::entity handle);
 
 		// destructor
 		~Entity() = default;
@@ -46,8 +47,15 @@ namespace Cosmos::Engine
 		template<typename T>
 		void RemoveComponent()
 		{
-			mScene->GetEntityRegistryRef().remove<T>(mHandle);
+			if (HasComponent<T>()) {
+				mScene->GetEntityRegistryRef().remove<T>(mHandle);
+			}
 		}
+
+	public:
+
+		// saves the scene's components into the datafile
+		void Serialize(Datafile& datafile);
 
 	private:
 
