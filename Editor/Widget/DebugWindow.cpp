@@ -22,7 +22,7 @@ namespace Cosmos::Editor
 			ImGui::Begin(ICON_FA_INFO_CIRCLE " Debug", nullptr);
 
 			ImGui::Text("App Timestep: %f", mApplication->GetTimestepRef()->GetTimestep());
-			ImGui::Text("App FPS: %.3f", mApplication->GetTimestepRef()->GetFramesPerSecond());
+			ImGui::Text("App FPS: %d", mApplication->GetTimestepRef()->GetFramesPerSecond());
 			ImGui::Text("Cam Pos (%.3f %.3f %.3f)", camera.GetPositionRef().x, camera.GetPositionRef().y, camera.GetPositionRef().z);
 			ImGui::Text("Cam Rot: (%.3f %.3f %.3f)", camera.GetRotationRef().x, camera.GetRotationRef().y, camera.GetRotationRef().z);
 			ImGui::Text("Cam Aim: (%.3f %.3f %.3f)", camera.GetFrontRef().x, camera.GetFrontRef().y, camera.GetFrontRef().z);

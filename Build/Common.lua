@@ -20,7 +20,8 @@ project "Common"
         "%{paths.Workspace}",
         "%{paths.Common}",
         --
-        "%{paths.glm}"
+        "%{paths.glm}",
+        "%{paths.spdlog}"
     }
 
     links

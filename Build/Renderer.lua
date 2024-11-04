@@ -26,11 +26,15 @@ project "Renderer"
         "%{paths.glm}",
         "%{paths.imgui}",
         "%{paths.imguizmo}",
+        "%{paths.rapidjson}",
+        "%{paths.spdlog}",
         "%{paths.stb}",
-        "%{paths.volk}",
+        "%{paths.tinygltf}",
         "%{paths.vma}",
+        "%{paths.volk}",
         --
-        "%{paths.Common}"
+        "%{paths.Common}",
+        "%{paths.Engine}"
     }
 
     defines
@@ -46,7 +50,7 @@ project "Renderer"
     }
 
     if os.host() == "windows" then
-        links { os.getenv("VULKAN_SDK") .. "/Lib/shaderc_shared.dll" }
+        links { os.getenv("VULKAN_SDK") .. "/Lib/shaderc_shared.lib" }
         disablewarnings { "26439" }
     end
 

@@ -1,5 +1,18 @@
 #pragma once
 
+#include "Util/Memory.h"
+
+#if defined(_WIN32)
+#pragma warning(push)
+#pragma warning(disable : 26800 26498 6285)
+#endif
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/sinks/basic_file_sink.h>
+#if defined(PLATFORM_WINDOWS)
+#pragma warning(pop)
+#endif
+
 #include <sstream>
 #include <vector>
 
@@ -13,7 +26,6 @@ namespace Cosmos
 		{
 			Trace = 0,
 			Info,
-			Todo,
 			Warn,
 			Error,
 			Assert,
@@ -30,13 +42,16 @@ namespace Cosmos
 	public:
 
 		// constructor
-		Logger() = default;
+		Logger();
 
 		// destructor
 		~Logger();
 
 		// returns the logger
 		static Logger& GetInstance();
+
+		// returns a reference to the backend logger (spdlogger)
+		inline static Shared<spdlog::logger>& GetBackendLogger() { return s_Logger; }
 
 		// logs to a ostringstream object
 		template<class T>
@@ -64,6 +79,8 @@ namespace Cosmos
 
 		std::ostringstream mOutput;
 		std::vector<ConsoleMessage> mConsoleMessages;
+
+		static Shared<spdlog::logger> s_Logger;
 	};
 }
 
@@ -72,16 +89,15 @@ namespace Cosmos
 {																														\
 	if(!(x))																											\
 	{																													\
-		Cosmos::Logger::GetInstance().ToTerminal(Cosmos::Logger::Severity::Assert, __FILE__, __LINE__, __VA_ARGS__);	\
+		Cosmos::Logger::GetBackendLogger()->critical(__VA_ARGS__);														\
 		std::abort();																									\
 	}																													\
 }
 
 // macros to facilitate using logging (only enabled on debug)
-#define COSMOS_LOG(severity, ...)																\
-{																								\
-	Cosmos::Logger::GetInstance().ToTerminal(severity, __FILE__, __LINE__, __VA_ARGS__);		\
-	if (severity == Cosmos::Logger::Severity::Assert) std::abort();								\
+#define COSMOS_LOG(severity, ...)																						\
+{																														\
+	Cosmos::Logger::GetInstance().ToTerminal(severity, __FILE__, __LINE__, __VA_ARGS__);								\
 }
 
 #define COSMOS_LOG_FILE(severity, filepath, ...)												\

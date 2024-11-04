@@ -95,7 +95,7 @@ namespace Cosmos::Engine
 	public:
 
 		// updates the camera
-		void OnUpdate(double timestep);
+		void OnUpdate(float timestep);
 
 		// event handling
 		void OnEvent(Shared<Platform::EventBase> event);

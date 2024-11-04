@@ -4,8 +4,9 @@
 #include "Scene.h"
 #include "Timestep.h"
 #include "Entity/Camera.h"
-#include <Common/File/Filesystem.h>
 #include <Common/Debug/Logger.h>
+#include <Common/Debug/Profiler.h>
+#include <Common/File/Filesystem.h>
 #include <Platform/Core/MainWindow.h>
 #include <Renderer/Core/Context.h>
 #include <Renderer/GUI/GUI.h>
@@ -15,6 +16,8 @@ namespace Cosmos::Engine
 	Application::Application(Shared<Project> project)
 		: mProject(project)
 	{
+		PROFILER_FUNCTION();
+
 		auto& settings = mProject->GetSettingsRef();
 		SetAssetsDir(settings.datapath);
 
@@ -23,11 +26,13 @@ namespace Cosmos::Engine
 		Renderer::Context::Initialize(this);
 		Renderer::GUI::Initialize();
 		mCurrentScene = new Scene(settings.initialscene);
-		mTimestep = CreateUnique<Timestep>(this);
+		mTimestep = CreateUnique<Timestep>();
 	}
 
 	Application::~Application()
 	{
+		PROFILER_FUNCTION();
+
 		delete mCurrentScene;
 		Renderer::GUI::Shutdown();
 		Renderer::Context::Shutdown();
@@ -37,33 +42,37 @@ namespace Cosmos::Engine
 
 	void Application::Run()
 	{
-		while (!Platform::MainWindow::GetRef().ShouldQuit())
+		PROFILER_FUNCTION();
+
+		Platform::MainWindow& window = Platform::MainWindow::GetRef();
+		Camera& camera = Camera::GetRef();
+		Renderer::GUI& gui = Renderer::GUI::GetRef();
+		Renderer::Context& renderer = Renderer::Context::GetRef();
+
+		while (!window.ShouldQuit())
 		{
-			mTimestep->OnTick();
+			PROFILER_SCOPE("MainLoop");
+
+			// fps and deltatime timer begins
+			mTimestep->StartFrame();
+			float ts = mTimestep->GetTimestep();
+
+			// frame logic
+			window.OnUpdate();
+			camera.OnUpdate(ts);
+			mCurrentScene->OnUpdate(ts);
+			gui.OnUpdate();
+			renderer.OnUpdate();
+
+			// fps and deltatime timer stops
+			mTimestep->EndFrame();
 		}
-	}
-
-	void Application::OnSyncUpdate()
-	{
-		// Todo: Implement interpolation beetween previous frame data and current frame data
-		// a frame data will be a class/struct that holds info about the physics, like position on world
-		double ts = mTimestep->GetTimestep();
-
-		mCurrentScene->OnUpdate(ts);
-	}
-
-	void Application::OnAsyncUpdate()
-	{
-		double ts = mTimestep->GetTimestep();
-
-		Platform::MainWindow::GetRef().OnUpdate();
-		Camera::GetRef().OnUpdate(ts);
-		Renderer::GUI::GetRef().OnUpdate();
-		Renderer::Context::GetRef().OnUpdate();
 	}
 
 	void Application::OnEvent(Shared<Platform::EventBase> event)
 	{
+		PROFILER_FUNCTION();
+
 		Camera::GetRef().OnEvent(event);
 		Renderer::GUI::GetRef().OnEvent(event);
 	}

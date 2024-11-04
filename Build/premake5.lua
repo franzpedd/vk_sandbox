@@ -22,7 +22,10 @@ paths["glfw"]  = "../Thirdparty/glfw/include";
 paths["glm"]  = "../Thirdparty/glm";
 paths["imgui"]  = "../Thirdparty/imgui";
 paths["imguizmo"]  = "../Thirdparty/imguizmo";
+paths["rapidjson"] = "../Thirdparty/rapidjson"
+paths["spdlog"] = "../Thirdparty/spdlog/include"
 paths["stb"]  = "../Thirdparty/stb";
+paths["tinygltf"] = "../Thirdparty/tinygltf"
 paths["vma"]  = "../Thirdparty/vma";
 paths["volk"]  = "../Thirdparty/volk";
 ---- libraries
@@ -41,7 +44,9 @@ group "Thirdparty"
     include "../Thirdparty/glm.lua"
     include "../Thirdparty/imgui.lua"
     include "../Thirdparty/imguizmo.lua"
+    include "../Thirdparty/spdlog.lua"
     include "../Thirdparty/stb.lua"
+    include "../Thirdparty/tinygltf.lua"
     include "../Thirdparty/vma.lua"
     include "../Thirdparty/volk.lua"
 group ""

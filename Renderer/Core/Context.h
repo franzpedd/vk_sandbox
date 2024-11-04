@@ -78,6 +78,7 @@ namespace Cosmos::Renderer
 
 	private:
 
+		// manage all active render passes
 		void ManageRenderpasses(uint32_t swapchainImageIndex);
 
 	private:

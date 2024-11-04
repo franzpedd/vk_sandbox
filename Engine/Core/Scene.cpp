@@ -4,8 +4,10 @@
 #include "Entity/Prefab.h"
 #include "Entity/Components/BaseComponents.h"
 #include <Common/Debug/Logger.h>
+#include <Common/Debug/Profiler.h>
 #include <Common/File/Filesystem.h>
 #include <Common/Math/ID.h>
+#include <Renderer/Core/IMesh.h>
 
 namespace Cosmos::Engine
 {
@@ -20,12 +22,38 @@ namespace Cosmos::Engine
 		delete mRootPrefab;
 	}
 
-	void Scene::OnUpdate(double timestep)
+	void Scene::OnUpdate(float timestep)
 	{
+		PROFILER_FUNCTION();
+
+		// meshes update
+		auto meshesView = mRegistry.view<IDComponent, TransformComponent, MeshComponent>();
+		for(auto entity : meshesView) {
+			auto [id, transform, mesh] = meshesView.get<IDComponent, TransformComponent, MeshComponent>(entity);
+
+			if (mesh.mesh == nullptr) {
+				continue;
+			}
+
+			mesh.mesh->OnUpdate(timestep);
+		}
 	}
 
 	void Scene::OnRender()
 	{
+		PROFILER_FUNCTION();
+
+		// meshes rendering
+		auto meshesView = mRegistry.view<IDComponent, TransformComponent, MeshComponent>();
+		for (auto entity : meshesView) {
+			auto [id, transform, mesh] = meshesView.get<IDComponent, TransformComponent, MeshComponent>(entity);
+
+			if (mesh.mesh == nullptr || !mesh.mesh->IsLoaded() || mesh.mesh->IsTransfering()) {
+				continue;
+			}
+
+			mesh.mesh->OnRender(transform.GetTransform(), id.id->GetValue());
+		}
 	}
 
 	void Scene::OnEvent(Shared<Platform::EventBase> event)

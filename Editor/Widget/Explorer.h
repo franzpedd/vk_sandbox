@@ -69,6 +69,8 @@ namespace Cosmos::Editor
 		// returns if the debug window is opened
 		inline bool IsOpened() { return mOpened; }
 
+		// signals the explorer to be refreshed, usually used by external classes
+		inline void HintRefresh() { mRefreshExplorer = true; }
 
 	private:
 
@@ -77,6 +79,9 @@ namespace Cosmos::Editor
 
 		// reloads the folder's content
 		void Refresh(std::string path);
+
+		// draws a menu if right mouse is clicked on the window
+		void DisplayRightClickMenu();
 		
 		// draws a menu if right mouse is pressed on item
 		void DisplayAssetMenu(Asset& asset);

@@ -1,6 +1,7 @@
 #include "Camera.h"
 
 #include <Common/Debug/Logger.h>
+#include <Common/Debug/Profiler.h>
 #include <Platform/Core/Input.h>
 #include <Platform/Event/KeyboardEvent.h>
 #include <Platform/Event/MouseEvent.h>
@@ -11,6 +12,8 @@ namespace Cosmos::Engine
 
 	void Camera::Initialize(float aspectRatio)
 	{
+		PROFILER_FUNCTION();
+
 		if (s_Instance) {
 			COSMOS_LOG(Logger::Warn, "Warning: Attempting to initialize Camera when it's already initialized\n");
 			return;
@@ -33,6 +36,8 @@ namespace Cosmos::Engine
 
 	Camera& Camera::GetRef()
 	{
+		PROFILER_FUNCTION();
+
 		if (!s_Instance) {
 			COSMOS_LOG(Logger::Error, "Camera has not been initialized\n");
 		}
@@ -62,15 +67,17 @@ namespace Cosmos::Engine
 		return mView;
 	}
 
-	void Camera::OnUpdate(double timestep)
+	void Camera::OnUpdate(float timestep)
 	{
+		PROFILER_FUNCTION();
+
 		if (!mShouldMove) return;
 
 		mFront.x = -cos(glm::radians(mRotation.x)) * sin(glm::radians(mRotation.y));
 		mFront.y = sin(glm::radians(mRotation.x));
 		mFront.z = cos(glm::radians(mRotation.x)) * cos(glm::radians(mRotation.y));
 
-		float moveSpeed = (float)timestep * mMovementSpeed * (mShiftPressed ? 2.5f : 1.0f);
+		float moveSpeed = timestep * mMovementSpeed * (mShiftPressed ? 2.5f : 1.0f);
 
 		if (mMovingForward) mPosition += mFront * moveSpeed;
 		if (mMovingBackward) mPosition -= mFront * moveSpeed;

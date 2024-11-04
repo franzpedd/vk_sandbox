@@ -10,6 +10,7 @@ namespace Cosmos::Engine { class Entity; }
 namespace Cosmos::Engine { class Prefab; }
 namespace Cosmos::Editor { class Application; }
 namespace Cosmos::Editor { class ComponentDisplayer; }
+namespace Cosmos::Editor { class Explorer; }
 
 namespace Cosmos::Editor
 {
@@ -18,7 +19,7 @@ namespace Cosmos::Editor
 	public:
 
 		// constructor
-		PrefabHierarchy(Application* application);
+		PrefabHierarchy(Application* application, Explorer* explorer);
 
 		// destructor
 		virtual ~PrefabHierarchy();
@@ -52,6 +53,9 @@ namespace Cosmos::Editor
 		// deletes all prefabs and entities requested to be deleted
 		void UpdateDeletionQueue();
 
+		// draws the menubar and handle it's options/popups
+		void DisplayMenubar();
+
 		// draws the root right-click menu options
 		void DisplayRootMenu();
 
@@ -70,6 +74,7 @@ namespace Cosmos::Editor
 	private:
 
 		Application* mApplication = nullptr;
+		Explorer* mExplorer = nullptr;
 		bool mOpened = true;
 		Unique<ComponentDisplayer> mComponentDisplayer;
 

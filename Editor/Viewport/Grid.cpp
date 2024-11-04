@@ -1,5 +1,6 @@
 #include "Grid.h"
 
+#include <Common/Core/Defines.h>
 #include <Common/Debug/Logger.h>
 #include <Common/File/Filesystem.h>
 #include <Engine/Entity/Camera.h>
@@ -7,7 +8,6 @@
 #include <Platform/Core/MainWindow.h>
 #include <Platform/Event/KeyboardEvent.h>
 #include <Renderer/Core/Context.h>
-#include <Renderer/Core/Defines.h>
 #include <Renderer/GUI/GUI.h>
 #include <Renderer/Vulkan/Buffer.h>
 #include <Renderer/Vulkan/Device.h>

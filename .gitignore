@@ -13,3 +13,5 @@ Build/premake5.exe
 # Paths
 Build/.vs
 Build/Bin
+Data/Profiler
+Data/Scene

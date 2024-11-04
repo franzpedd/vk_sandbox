@@ -83,8 +83,10 @@ namespace Cosmos::Engine
             COSMOS_LOG(Logger::Error, "Could not find the given entity to destroy it");
             return;
         }
+
         entity->RemoveComponent<NameComponent>();
         entity->RemoveComponent<IDComponent>();
+        entity->RemoveComponent<MeshComponent>();
         
         delete entity;
     }

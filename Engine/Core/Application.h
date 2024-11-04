@@ -34,12 +34,6 @@ namespace Cosmos::Engine
 		// starts the main loop
 		void Run();
 
-		// This function is called at a fixed rate (depends on Timestep)
-		void OnSyncUpdate();
-
-		// This function called at an unfixed rate
-		void OnAsyncUpdate();
-
 		// called when an event happens
 		void OnEvent(Shared<Platform::EventBase> event);
 

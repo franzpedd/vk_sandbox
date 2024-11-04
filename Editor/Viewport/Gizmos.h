@@ -5,8 +5,8 @@
 #include <vector>
 
 // forward declarations
-namespace Cosmos { class Camera; }
-namespace Cosmos { class Entity; }
+namespace Cosmos::Engine { class Camera; }
+namespace Cosmos::Engine { class Entity; }
 
 namespace Cosmos::Editor
 {
@@ -65,11 +65,11 @@ namespace Cosmos::Editor
 	public:
 
 		// updates the gizmos on objects
-		void OnUpdate(const std::vector<Shared<Entity>>& entities, ImVec2 viewportSize);
+		void OnUpdate(Engine::Entity* entity, ImVec2 viewportSize);
 
 	private:
 
-		Shared<Camera> mCamera;
+		Shared<Engine::Camera> mCamera;
 		GizmosMode mMode = GizmosMode::Undefined;
 		bool mSelectedButton = false;
 		bool mSnapping = false;

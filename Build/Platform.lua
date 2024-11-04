@@ -18,9 +18,11 @@ project "Platform"
     includedirs
     {
         "%{paths.Workspace}",
+        "%{paths.Common}",
         "%{paths.Platform}",
         --
         "%{paths.glfw}",
+        "%{paths.spdlog}",
         "%{paths.stb}"
     }
 

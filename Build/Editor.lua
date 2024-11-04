@@ -26,9 +26,12 @@ project "Editor"
         "%{paths.glm}",
         "%{paths.imgui}",
         "%{paths.imguizmo}",
+        "%{paths.spdlog}",
         "%{paths.stb}",
-        "%{paths.volk}",
+        "%{paths.rapidjson}",
+        "%{paths.tinygltf}",
         "%{paths.vma}",
+        "%{paths.volk}",
         --
         "%{paths.Common}",
         "%{paths.Platform}",
@@ -53,7 +56,7 @@ project "Editor"
 
     if os.host() == "windows" then
         defines { "_CRT_SECURE_NO_WARNINGS" }
-        links { os.getenv("VULKAN_SDK") .. "/Lib/shaderc_shared.dll" }
+        links { os.getenv("VULKAN_SDK") .. "/Lib/shaderc_shared.lib" }
         disablewarnings { "26439" }
     end
 

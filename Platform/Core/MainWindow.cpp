@@ -7,6 +7,7 @@
 #include "Event/WindowEvent.h"
 
 #include <Common/Debug/Logger.h>
+#include <Common/Debug/Profiler.h>
 #include <Common/File/Filesystem.h>
 #include <Common/Util/Memory.h>
 #include <Engine/Core/Application.h>
@@ -23,6 +24,8 @@ namespace Cosmos::Platform
 
 	void MainWindow::Initialize(Engine::Application* application, const char* title, int width, int height, bool fullScreen)
 	{
+        PROFILER_FUNCTION();
+
 		if (s_Instance) {
 			COSMOS_LOG(Logger::Warn, "Warning: Attempting to initialize MainWindow when it's already initialized\n");
 			return;
@@ -42,7 +45,7 @@ namespace Cosmos::Platform
         glfwSetWindowIcon(s_Instance->mNativeWindow, 1, icons);
         stbi_image_free(icons[0].pixels);
 
-        COSMOS_LOG(Logger::Todo, "FUNC:StaleResizeFramebuffer this is wacky but we can't create a swapchain with the window minimized, therefore we must stalle the window somehow. I have choosen to wait the application until it's not minimized anymore but this may desired in some cases");
+        COSMOS_LOG(Logger::Info, "FUNC:StaleResizeFramebuffer this is wacky but we can't create a swapchain with the window minimized, therefore we must stalle the window somehow. I have choosen to wait the application until it's not minimized anymore but this may desired in some cases");
     
         s_Instance->SetCallbacks();
     }
@@ -58,6 +61,8 @@ namespace Cosmos::Platform
 
 	MainWindow& MainWindow::GetRef()
 	{
+        PROFILER_FUNCTION();
+
 		if (!s_Instance) {
             COSMOS_LOG(Logger::Error, "MainWindow is not initialized or has been de-initialized\n");
 		}
@@ -77,6 +82,7 @@ namespace Cosmos::Platform
 
 	void MainWindow::OnUpdate()
 	{
+        PROFILER_FUNCTION();
         glfwPollEvents();
 	}
 

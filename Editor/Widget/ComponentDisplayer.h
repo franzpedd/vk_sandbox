@@ -30,8 +30,9 @@ namespace Cosmos::Editor
 		template<typename T>
 		void AddComponentOnList(const char* name, Engine::Entity* entity);
 
+		// displays the component configuration
 		template<typename T, typename F>
-		void UpdateComponent(const char* name, Engine::Entity* entity, F function);
+		void ShowComponent(const char* name, Engine::Entity* entity, F function);
 
 	private:
 

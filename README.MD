@@ -17,7 +17,6 @@ The building process:
 * Use the desired command to generate the desired solution ([See Here](https://premake.github.io/docs/Using-Premake));
 
 # Near Roadmap
-* Implement Console Widget;
 * Implement Benchmarking;
 * Properly implement Mesh Loader;
 * Add Lights Emitters and Implement Cluster Shading;

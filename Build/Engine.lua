@@ -20,8 +20,9 @@ project "Engine"
         "%{paths.Workspace}",
         "%{paths.Engine}",
         --
-        "%{paths.glm}",
         "%{paths.entt}",
+        "%{paths.glm}",
+        "%{paths.spdlog}",
         --
         "%{paths.Common}",
         "%{paths.Renderer}",

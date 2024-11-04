@@ -2,11 +2,12 @@
 
 #include "Gizmos.h"
 #include "Grid.h"
+#include "Widget/PrefabHierarchy.h"
+#include <Common/Core/Defines.h>
 #include <Common/Debug/Logger.h>
 #include <Engine/Entity/Camera.h>
 #include <Platform/Event/WindowEvent.h>
 #include <Renderer/Core/Context.h>
-#include <Renderer/Core/Defines.h>
 #include <Renderer/GUI/GUI.h>
 #include <Renderer/GUI/Icon.h>
 #include <Renderer/Vulkan/Device.h>
@@ -15,8 +16,8 @@
 
 namespace Cosmos::Editor
 {
-	Viewport::Viewport()
-		: Widget("Viewport")
+	Viewport::Viewport(PrefabHierarchy* prefabHierarchy)
+		: Widget("Viewport"), mPrefabHierarchy(prefabHierarchy)
 	{
 		mGizmos = CreateUnique<Gizmos>();
 		mGrid = CreateUnique<Grid>();
@@ -41,27 +42,27 @@ namespace Cosmos::Editor
 
 	void Viewport::OnUpdate()
 	{
-		if (ImGui::Begin(ICON_FA_CAMERA " Viewport", nullptr /*, ImGuiWindowFlags_MenuBar*/))
-		{
-			ImGui::Image(mDescriptorSets[Renderer::Context::GetRef().GetCurrentFrame()], ImGui::GetContentRegionAvail());
+		ImGui::Begin(ICON_FA_CAMERA " Viewport", nullptr);
+
+		ImGui::Image(mDescriptorSets[Renderer::Context::GetRef().GetCurrentFrame()], ImGui::GetContentRegionAvail());
 		
-			// updating aspect ratio for the docking
-			mCurrentSize = ImGui::GetWindowSize();
-			Engine::Camera::GetRef().SetAspectRatio(mCurrentSize.x / mCurrentSize.y);
+		// updating aspect ratio for the docking
+		mCurrentSize = ImGui::GetWindowSize();
+		Engine::Camera::GetRef().SetAspectRatio(mCurrentSize.x / mCurrentSize.y);
 		
-			// viewport boundaries
-			mContentRegionMin = ImGui::GetWindowContentRegionMin();
-			mContentRegionMax = ImGui::GetWindowContentRegionMax();
-			mContentRegionMin.x += ImGui::GetWindowPos().x;
-			mContentRegionMin.y += ImGui::GetWindowPos().y;
-			mContentRegionMax.x += ImGui::GetWindowPos().x;
-			mContentRegionMax.y += ImGui::GetWindowPos().y;
-		
-			//DrawMenuBar();
-		
-			//mGizmos->OnUpdate(mSceneHierarchy->GetSelectedEntityRef(), mCurrentSize);
-		}
-		
+		// viewport boundaries
+		mViewportPos = ImGui::GetWindowPos();
+		mContentRegionMin = ImGui::GetWindowContentRegionMin();
+		mContentRegionMax = ImGui::GetWindowContentRegionMax();
+		mContentRegionMin.x += ImGui::GetWindowPos().x;
+		mContentRegionMin.y += ImGui::GetWindowPos().y;
+		mContentRegionMax.x += ImGui::GetWindowPos().x;
+		mContentRegionMax.y += ImGui::GetWindowPos().y;
+	
+		DrawMenu();
+
+		mGizmos->OnUpdate(mPrefabHierarchy->GetSelectedEntity(), mCurrentSize);
+
 		ImGui::End();
 	}
 
@@ -96,12 +97,120 @@ namespace Cosmos::Editor
 		}
 	}
 
-	void Viewport::DrawMenuBar()
+	void Viewport::DrawMenu()
 	{
-		if (ImGui::BeginMenuBar())
+		ImGui::SetNextWindowPos({ mViewportPos.x + 10.0f, mViewportPos.y + 30.0f });
+
+		ImGui::BeginChild("##ViewportMenubar", ImVec2(), ImGuiChildFlags_AlwaysUseWindowPadding, ImGuiWindowFlags_NoBackground);
+		
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetStyleColorVec4(ImGuiCol_HeaderActive));
+
+		// gizmos mode
 		{
-			ImGui::EndMenuBar();
+			static uint32_t selectedGizmos = 0;
+			GizmosMode modes[4] = { GizmosMode::Undefined, GizmosMode::Translate, GizmosMode::Rotate, GizmosMode::Scale };
+			std::string texts[4] = { ICON_LC_MOUSE_POINTER, ICON_LC_MOVE_3D, ICON_LC_ROTATE_3D, ICON_LC_SCALE_3D };
+			std::string tooltips[4] = { "Selection", "Translation", "Rotation", "Scale" };
+			
+			for (uint8_t i = 0; i < 4; i++) {
+			
+				ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 5.0f);
+			
+				bool coloredButton = selectedGizmos == i;
+				if (coloredButton) {
+					ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_HeaderActive));
+				}
+			
+				if (ImGui::Button(texts[i].c_str())) {
+					mGizmos->SetMode(modes[i]);
+					selectedGizmos = i;
+				}
+			
+				if (coloredButton) {
+					ImGui::PopStyleColor();
+				}
+			
+				if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+					ImGui::SetTooltip("%s", tooltips[i].c_str());
+				}
+			
+				ImGui::SameLine();
+			}
 		}
+
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 5.0f);
+		ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
+		ImGui::SameLine();
+
+		// grid
+		{
+			bool selectedButton = false;
+
+			//
+			static float snapping = 1.0f;
+			ImGui::PushItemWidth(50);
+			ImGui::PushStyleVar(ImGuiStyleVar_GrabMinSize, 2.0f);
+			ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 5.0f);
+			if (ImGui::SliderFloat("##Snapping", &snapping, 0.005f, 10.0f, "%.2f")) {
+				mGizmos->SetSnappingValue(snapping);
+			}
+			ImGui::PopStyleVar();
+			ImGui::PopItemWidth();
+
+			if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+				ImGui::SetTooltip("Grid snapping value");
+			}
+
+			ImGui::SameLine();
+
+			//
+			static bool selectedSanpping = false;
+			selectedButton = selectedSanpping;
+			if (selectedButton) {
+				ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_HeaderActive));
+			}
+
+			ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 5.0f);
+			if (ImGui::Button(ICON_LC_MAGNET)) {
+				mGizmos->ToogleSnapping();
+				selectedSanpping = !selectedSanpping;
+			}
+
+			if (selectedButton) {
+				ImGui::PopStyleColor();
+			}
+
+			if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+				ImGui::SetTooltip("Enables/Disables snapping with the grid value");
+			}
+
+			ImGui::SameLine();
+
+			//
+			static bool selectedGrid = true;
+			selectedButton = selectedGrid;
+			if (selectedButton) {
+				ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_HeaderActive));
+			}
+
+			ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 5.0f);
+			if (ImGui::Button(ICON_LC_GRID_3X3)) {
+				mGrid->ToogleOnOff();
+				selectedGrid = !selectedGrid;
+			}
+
+			if (selectedButton) {
+				ImGui::PopStyleColor();
+			}
+			
+			if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+				ImGui::SetTooltip("Enables/Disables grid on 3D View");
+			}
+		}
+		
+		ImGui::PopStyleColor();
+
+		ImGui::EndChild();
 	}
 
 	void Viewport::CreateRendererResources()

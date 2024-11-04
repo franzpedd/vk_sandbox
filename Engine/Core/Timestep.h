@@ -2,9 +2,6 @@
 
 #include <chrono>
 
-// forward declarations
-namespace Cosmos::Engine { class Application; }
-
 namespace Cosmos::Engine
 {
 	class Timestep
@@ -12,26 +9,33 @@ namespace Cosmos::Engine
 	public:
 
 		// constructor
-		Timestep(Application* application);
+		Timestep() = default;
 
 		// destructor
 		~Timestep() = default;
 
-		// ends the timestep tick
-		void OnTick();
+		// returns the average fps count
+		inline uint32_t GetFramesPerSecond() const { return mLastFPS; }
 
 		// returns the timestep
-		inline double GetTimestep() { return mTimestep / 1000.0f; }
+		inline float GetTimestep() const { return mTimestep; }
 
-		// returns the average of frames per second
-		inline float GetFramesPerSecond() { return (1000.0f / mTimestep); }
+	public:
+
+		// starts the frames per second count
+		void StartFrame();
+
+		// ends the frames per second count
+		void EndFrame();
 
 	private:
 
-		Application* mApplication = nullptr;
-		std::chrono::steady_clock::time_point mCurrentTime;
-		double mDeltaTime = 0.03;
-		double mAccumulator = 0.0;
-		float mTimestep = 0.0f;
+		std::chrono::high_resolution_clock::time_point mStart;
+		std::chrono::high_resolution_clock::time_point mEnd;
+		double mTimeDiff = 0.0f;
+		float mFpsTimer = 0.0f;
+		uint32_t mFrames = 0; // average fps
+		float mTimestep = 1.0f; // timestep/delta time (used to update logic)
+		uint32_t mLastFPS = 0;
 	};
 }

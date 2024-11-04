@@ -84,15 +84,15 @@ namespace Cosmos::Editor
 			separatorText.append(mCurrentDir);
 			ImGui::SeparatorText(separatorText.c_str());
 
-			ImGui::NewLine();
-
 			// check if contents should be refreshed
 			if (mRefreshExplorer) {
 				Refresh(mCurrentDir);
 			}
-
+			
 			// assets part
-			{
+			if (ImGui::BeginChild("##ExplorerAssets", ImVec2(0,0))) {
+				DisplayRightClickMenu();
+
 				const ImVec2 size = ImVec2(64.0f, 64.0f);
 				ImVec2 lastItemPosition = ImGui::GetCursorPos();
 
@@ -107,6 +107,7 @@ namespace Cosmos::Editor
 				}
 			}
 
+			ImGui::EndChild();
 			ImGui::End();
 		}
 	}
@@ -296,6 +297,70 @@ namespace Cosmos::Editor
 			}
 		}
 	}
+
+	void Explorer::DisplayRightClickMenu()
+	{
+		if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl)) {
+			return;
+		}
+		
+		bool createNewScene = false;
+
+		if (ImGui::BeginPopupContextWindow("##RightClickExplorerMenu", ImGuiPopupFlags_MouseButtonRight))
+		{
+			if (ImGui::MenuItem(ICON_LC_PLUS " New Scene")) {
+				createNewScene = true;
+			}
+
+			ImGui::EndPopup();
+		}
+
+		if (createNewScene) {
+			ImGui::OpenPopup("Creating new Scene");
+		}
+
+		ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+		ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+		if (ImGui::BeginPopupModal("Creating new Scene", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+
+			char buffer[32] = {};
+			static std::string sSceneName = {};
+
+			if (ImGui::InputTextWithHint("##CreatingNewScene", "give it a name", buffer, sizeof(buffer))) {
+				sSceneName = std::string(buffer);
+			}
+
+			std::string path = mCurrentDir;
+			path.append("/");
+			path.append(sSceneName);
+			path.append(".scene");
+
+			if (std::filesystem::exists(path)) {
+				ImGui::TextColored(ImVec4(1.0f, 0.1f, 0.1f, 1.0f), "Previous '%s' will be overwritten", sSceneName.c_str());
+			}
+
+			if (ImGui::Button("Create ##CreateNewScene:Create")) {
+				if (!sSceneName.empty()) { // ensures user has given it a name
+					Datafile scene;
+					scene["Name"].SetString(sSceneName);
+					Datafile::Write(scene, path);
+
+					mRefreshExplorer = true;
+				}
+				
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::SameLine();
+
+			if (ImGui::Button("Cancel ##CreateNewScene:Cancel")) {
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::EndPopup();
+		}
+	}
 	
     void Explorer::DisplayAssetMenu(Asset& asset)
     {
@@ -303,18 +368,25 @@ namespace Cosmos::Editor
 			return;
 		}
 		
+		// right-click menus on certain types of items
 		ImGui::PushID((&asset));
 		switch (asset.type)
 		{
 			case Asset::Type::Scene:
 			{
 				if (ImGui::BeginPopupContextItem("##RightClickExplorerMesh", ImGuiPopupFlags_MouseButtonRight)) {
-					if (ImGui::MenuItem(ICON_LC_FOLDER " Load")) {
+					if (ImGui::MenuItem(ICON_FA_EXTERNAL_LINK_SQUARE " Load")) {
 
 						Datafile scene;
 						Datafile::Read(scene, asset.path.c_str());
 						mApplication->GetCurrentScene()->Deserialize(scene);
+					}
 
+					ImGui::Separator();
+
+					if (ImGui::MenuItem(ICON_FA_TRASH " Delete")) {
+						std::filesystem::remove(asset.path);
+						mRefreshExplorer = true;
 					}
 
 					ImGui::EndPopup();

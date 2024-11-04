@@ -1,6 +1,7 @@
 #include "PrefabHierarchy.h"
 
 #include "ComponentDisplayer.h"
+#include "Explorer.h"
 #include "Core/Application.h"
 #include <Common/Debug/Logger.h>
 #include <Common/File/Datafile.h>
@@ -14,15 +15,16 @@
 #include <Platform/Event/MouseEvent.h>
 #include <Renderer/GUI/Icon.h>
 #include <Renderer/Wrapper/imgui.h>
+#include <filesystem>
 #include <set>
 
 namespace Cosmos::Editor
 {
-	PrefabHierarchy::PrefabHierarchy(Application* application)
-		: Widget("Hierarchy"), mApplication(application)
+	PrefabHierarchy::PrefabHierarchy(Application* application, Explorer* explorer)
+		: Widget("Hierarchy"), mApplication(application), mExplorer(explorer)
 	{
-		COSMOS_LOG(Logger::Todo, "Incorporate Components Displayer into PrefabHierarchy Panel");
-		COSMOS_LOG(Logger::Todo, "Implement multiple-selection context");
+		COSMOS_LOG(Logger::Info, "Incorporate Components Displayer into PrefabHierarchy Panel");
+		COSMOS_LOG(Logger::Info, "Implement multiple-selection context");
 
 		mComponentDisplayer = CreateUnique<ComponentDisplayer>(this);
 	}
@@ -37,18 +39,7 @@ namespace Cosmos::Editor
 		{
 			ImGui::Begin(ICON_FA_LIST " Hierarchy", nullptr);
 
-			ImGui::Text(ICON_FA_PAINT_BRUSH " Edit Scene");
-			ImGui::SameLine();
-			ImGui::SetCursorPosX(ImGui::GetWindowSize().x - 30.0f);
-			
-			if (ImGui::Button(ICON_LC_SAVE "##SaveCurrentScene")) {
-				Datafile scene = mApplication->GetCurrentScene()->Serialize();
-				std::string path = GetAssetSubDir("Scene");
-				path.append("/");
-				path.append(mApplication->GetCurrentScene()->GetName());
-				path.append(".scene");
-				Datafile::Write(scene, path);
-			}
+			DisplayMenubar();
 
 			ImGui::BeginChild(" ##HierarchyChild");
 			DisplayRootMenu();
@@ -59,7 +50,6 @@ namespace Cosmos::Editor
 			ImGui::EndChild();
 			
 			mComponentDisplayer->OnUpdate();
-			
 			
 			ImGui::End();
 		}
@@ -201,6 +191,70 @@ namespace Cosmos::Editor
 
 		mEntityDeletionQueue.clear();
 		mPrefabDeletionQueue.clear();
+	}
+
+	void PrefabHierarchy::DisplayMenubar()
+	{
+		ImGui::Text(ICON_FA_PAINT_BRUSH " Edit Scene");
+		ImGui::SameLine();
+		ImGui::SetCursorPosX(ImGui::GetWindowSize().x - 60.0f);
+		
+		if (ImGui::Button(ICON_LC_SAVE "##SaveCurrentScene")) {
+			Datafile scene = mApplication->GetCurrentScene()->Serialize();
+			std::string path = GetAssetSubDir("Scene");
+			path.append("/");
+			path.append(mApplication->GetCurrentScene()->GetName());
+			path.append(".scene");
+			Datafile::Write(scene, path);
+		}
+		ImGui::SetItemTooltip("Save current scene");
+		
+		ImGui::SameLine();
+		
+		if (ImGui::Button(ICON_LC_SAVE_ALL "##SaveCurrentSceneAs")) {
+			ImGui::OpenPopup("Save current scene as");
+		}
+		ImGui::SetItemTooltip("Save current scene as");
+		
+		if (ImGui::BeginPopupModal("Save current scene as", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+
+			char buffer[32] = {};
+			static std::string sSceneName = {};
+
+			if (ImGui::InputTextWithHint("##SavingCurrentSceneAs", "give it a name", buffer, sizeof(buffer))) {
+				sSceneName = std::string(buffer);
+			}
+
+			std::string path = GetAssetSubDir("Scene");
+			path.append("/");
+			path.append(sSceneName);
+			path.append(".scene");
+
+			if (std::filesystem::exists(path)) {
+				ImGui::TextColored(ImVec4(1.0f, 0.1f, 0.1f, 1.0f), "Previous '%s' will be overwritten", sSceneName.c_str());
+			}
+
+			if (ImGui::Button("Save ##SaveCurrentSceneAs:Create")) {
+				if (!sSceneName.empty()) { // ensures user has given it a name
+
+					mApplication->GetCurrentScene()->SetName(sSceneName);
+					Datafile scene = mApplication->GetCurrentScene()->Serialize();
+					Datafile::Write(scene, path);
+
+					mExplorer->HintRefresh();
+				}
+
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::SameLine();
+
+			if (ImGui::Button("Cancel ##SaveCurrentSceneAs:Cancel")) {
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::EndPopup();
+		}
 	}
 
 	void PrefabHierarchy::DisplayRootMenu()

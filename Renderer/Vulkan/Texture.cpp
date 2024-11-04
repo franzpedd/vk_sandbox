@@ -4,6 +4,7 @@
 #include "Device.h"
 #include "Renderpass.h"
 #include "Core/Context.h"
+#include "GUI/GUI.h"
 
 #include <Common/Debug/Logger.h>
 #include <Platform/Core/PlatformDetection.h>
@@ -24,10 +25,11 @@
 
 namespace Cosmos::Renderer::Vulkan
 {
-	Texture2D::Texture2D(std::string path, bool guiImage)
-		: mPath(path)
+	Texture2D::Texture2D(std::string path, bool gui)
 	{
-		LoadTexture(guiImage);
+		ITexture2D::mPath = path;
+
+		LoadTexture(gui);
 		auto& renderer = Context::GetRef();
 
 		// image view
@@ -49,6 +51,8 @@ namespace Cosmos::Renderer::Vulkan
 			VK_SAMPLER_ADDRESS_MODE_REPEAT,
 			(float)mMipLevels
 		);
+
+		mDescriptorSet = (VkDescriptorSet)GUI::GetRef().AddTexture(mSampler, mView);
 	}
 
 	Texture2D::~Texture2D()
@@ -62,7 +66,22 @@ namespace Cosmos::Renderer::Vulkan
 		vkDestroySampler(renderer.GetDevice()->GetLogicalDevice(), mSampler, nullptr);
 	}
 
-	void Texture2D::LoadTexture(bool guiImage)
+	void* Texture2D::GetView()
+	{
+		return mView;
+	}
+
+	void* Texture2D::GetSampler()
+	{
+		return mSampler;
+	}
+
+	void* Texture2D::GetUIDescriptor()
+	{
+		return mDescriptorSet;
+	}
+
+	void Texture2D::LoadTexture(bool gui)
 	{
 		int32_t channels;
 		stbi_uc* pixels = stbi_load(mPath.c_str(), &mWidth, &mHeight, &channels, STBI_rgb_alpha);
@@ -72,7 +91,7 @@ namespace Cosmos::Renderer::Vulkan
 			return;
 		}
 
-		mMipLevels =  guiImage ? 1 : (uint32_t)(std::floor(std::log2(std::max(mWidth, mHeight)))) + 1;
+		mMipLevels = gui ? 1 : (uint32_t)(std::floor(std::log2(std::max(mWidth, mHeight)))) + 1;
 		VkDeviceSize imgSize = (VkDeviceSize)(mWidth * mHeight * 4); // enforce 4 channels
 
 		// create staging buffer for image
@@ -105,7 +124,7 @@ namespace Cosmos::Renderer::Vulkan
 			mHeight,
 			mMipLevels,
 			1,
-			guiImage ? VK_SAMPLE_COUNT_1_BIT : renderpass->GetMSAA(),
+			gui ? VK_SAMPLE_COUNT_1_BIT : renderpass->GetMSAA(),
 			VK_FORMAT_R8G8B8A8_SRGB,
 			VK_IMAGE_TILING_OPTIMAL,
 			VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -219,10 +238,11 @@ namespace Cosmos::Renderer::Vulkan
 	}
 
 	TextureCubemap::TextureCubemap(std::vector<std::string> paths)
-		: mPaths(paths)
 	{
+		ITextureCubemap::mPaths = paths;
+
 		auto& renderer = Context::GetRef();
-		COSMOS_LOG(Logger::Todo, "Create mipmaps for Vulkan Cubemaps");
+		COSMOS_LOG(Logger::Info, "Create mipmaps for Vulkan Cubemaps");
 
 		LoadTextures();
 
@@ -247,6 +267,8 @@ namespace Cosmos::Renderer::Vulkan
 			VK_SAMPLER_ADDRESS_MODE_REPEAT,
 			(float)mMipLevels
 		);
+
+		mDescriptor = (VkDescriptorSet)GUI::GetRef().AddTexture(mSampler, mView);
 	}
 
 	TextureCubemap::~TextureCubemap()
@@ -258,6 +280,21 @@ namespace Cosmos::Renderer::Vulkan
 		vkDestroyImage(renderer.GetDevice()->GetLogicalDevice(), mImage, nullptr);
 		vmaFreeMemory(renderer.GetDevice()->GetAllocator(), mMemory);
 		vkDestroySampler(renderer.GetDevice()->GetLogicalDevice(), mSampler, nullptr);
+	}
+
+	void* TextureCubemap::GetView()
+	{
+		return mView;
+	}
+
+	void* TextureCubemap::GetSampler()
+	{
+		return mSampler;
+	}
+
+	void* TextureCubemap::GetUIDescriptor()
+	{
+		return mDescriptor;
 	}
 
 	void TextureCubemap::LoadTextures()

@@ -98,4 +98,27 @@ namespace Cosmos::Engine
 			component.scale = { dataS["X"].GetDouble(), dataS["Y"].GetDouble(), dataS["Z"].GetDouble() };
 		}
 	}
+
+	glm::mat4 TransformComponent::GetTransform() const
+	{
+		glm::mat4 rot = glm::toMat4(glm::quat(rotation));
+		return glm::translate(glm::mat4(1.0f), translation) * rot * glm::scale(glm::mat4(1.0f), scale);
+	}
+
+	glm::mat4 TransformComponent::GetNormal() const
+	{
+		return glm::transpose(glm::inverse(glm::mat3(GetTransform())));
+	}
+
+	MeshComponent::MeshComponent()
+	{
+	}
+
+	void MeshComponent::Serialize(Entity* entity, Datafile& dataFile)
+	{
+	}
+
+	void MeshComponent::Deserialize(Entity* entity, Datafile& dataFile)
+	{
+	}
 }

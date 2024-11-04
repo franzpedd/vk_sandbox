@@ -11,10 +11,12 @@
 #include "Vulkan/Swapchain.h"
 
 #include <Common/Debug/Logger.h>
+#include <Common/Debug/Profiler.h>
 #include <Common/File/Filesystem.h>
 
 #include <Engine/Core/Application.h>
 #include <Engine/Core/Project.h>
+#include <Engine/Core/Scene.h>
 #include <Engine/Entity/Camera.h>
 
 #include <Platform/Core/MainWindow.h>
@@ -43,6 +45,8 @@ namespace Cosmos::Renderer
 
 	Context& Context::GetRef()
 	{
+		PROFILER_FUNCTION();
+
 		if (!s_Instance) {
 			COSMOS_LOG(Logger::Error, "Renderer has not been initialized\n");
 		}
@@ -53,6 +57,8 @@ namespace Cosmos::Renderer
 	Context::Context(Engine::Application* application)
 		: mApplication(application)
 	{
+		PROFILER_FUNCTION();
+
 		auto& settings = mApplication->GetProjectRef()->GetSettingsRef();
 		mInstance = CreateShared<Vulkan::Instance>(settings.enginename, settings.gamename, settings.validations, settings.version, settings.vulkanversion);
 		mDevice = CreateShared<Vulkan::Device>(mInstance, 2);
@@ -73,8 +79,12 @@ namespace Cosmos::Renderer
 
 	void Context::OnUpdate()
 	{
+		PROFILER_FUNCTION();
+
 		// send data to gpu
 		{
+			PROFILER_SCOPE("Send Data");
+
 			// camera data
 			Engine::Camera& cameraObject = Engine::Camera::GetRef();
 			Vulkan::CameraBuffer camera = {};
@@ -85,13 +95,12 @@ namespace Cosmos::Renderer
 			memcpy(mBuffers.GetRef("Camera")->GetMappedDataRef()[mCurrentFrame], &camera, sizeof(camera));
 		}
 
-		// render frame
+		// get next image available from the swapchain
 		{
-			VkResult res = VK_SUCCESS;
+			PROFILER_SCOPE("Aquire Image");
 
-			// aquire image from swapchain
 			vkWaitForFences(mDevice->GetLogicalDevice(), 1, &mSwapchain->GetInFlightFencesRef()[mCurrentFrame], VK_TRUE, UINT64_MAX);
-			res = vkAcquireNextImageKHR(mDevice->GetLogicalDevice(), mSwapchain->GetSwapchain(), UINT64_MAX, mSwapchain->GetAvailableSemaphoresRef()[mCurrentFrame], VK_NULL_HANDLE, &mImageIndex);
+			VkResult res = vkAcquireNextImageKHR(mDevice->GetLogicalDevice(), mSwapchain->GetSwapchain(), UINT64_MAX, mSwapchain->GetAvailableSemaphoresRef()[mCurrentFrame], VK_NULL_HANDLE, &mImageIndex);
 
 			if (res == VK_ERROR_OUT_OF_DATE_KHR) {
 				mSwapchain->Recreate();
@@ -103,19 +112,20 @@ namespace Cosmos::Renderer
 			}
 
 			vkResetFences(mDevice->GetLogicalDevice(), 1, &mSwapchain->GetInFlightFencesRef()[mCurrentFrame]);
+		}
 
-			// execute the render passes
-			ManageRenderpasses(mImageIndex);
+		// issue draw command
+		ManageRenderpasses(mImageIndex);
 
-			// submits the draw calls
-			VkSwapchainKHR swapChains[] = { mSwapchain->GetSwapchain() };
-			VkSemaphore waitSemaphores[] = { mSwapchain->GetAvailableSemaphoresRef()[mCurrentFrame] };
-			VkSemaphore signalSemaphores[] = { mSwapchain->GetFinishedSempahoresRef()[mCurrentFrame] };
-			VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-			std::vector<VkCommandBuffer> submitCommandBuffers = {
-				mRenderpasses.GetRef("Swapchain")->GetCommandfuffersRef()[mCurrentFrame]
-			};
+		// submits command buffers
+		VkSwapchainKHR swapChains[] = { mSwapchain->GetSwapchain() };
+		VkSemaphore waitSemaphores[] = { mSwapchain->GetAvailableSemaphoresRef()[mCurrentFrame] };
+		VkSemaphore signalSemaphores[] = { mSwapchain->GetFinishedSempahoresRef()[mCurrentFrame] };
+		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+		{
+			PROFILER_SCOPE("Submit");
 
+			std::vector<VkCommandBuffer> submitCommandBuffers = { mRenderpasses.GetRef("Swapchain")->GetCommandfuffersRef()[mCurrentFrame] };
 			if (mRenderpasses.Exists("Viewport")) {
 				submitCommandBuffers.push_back(mRenderpasses.GetRef("Viewport")->GetCommandfuffersRef()[mCurrentFrame]);
 			}
@@ -135,8 +145,12 @@ namespace Cosmos::Renderer
 			submitInfo.signalSemaphoreCount = 1;
 			submitInfo.pSignalSemaphores = signalSemaphores;
 			COSMOS_ASSERT(vkQueueSubmit(mDevice->GetGraphicsQueue(), 1, &submitInfo, mSwapchain->GetInFlightFencesRef()[mCurrentFrame]) == VK_SUCCESS, "Failed to submit draw command");
+		}
+		
+		// presents the image
+		{
+			PROFILER_SCOPE("Present");
 
-			// presents the image
 			VkPresentInfoKHR presentInfo = {};
 			presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 			presentInfo.waitSemaphoreCount = 1;
@@ -144,24 +158,23 @@ namespace Cosmos::Renderer
 			presentInfo.swapchainCount = 1;
 			presentInfo.pSwapchains = swapChains;
 			presentInfo.pImageIndices = &mImageIndex;
-
-			res = vkQueuePresentKHR(mDevice->GetPresentQueue(), &presentInfo);
-
-			if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR || Platform::MainWindow::GetRef().ShouldResize())
-			{
+			
+			VkResult res = vkQueuePresentKHR(mDevice->GetPresentQueue(), &presentInfo);
+			
+			if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR || Platform::MainWindow::GetRef().ShouldResize()) {
 				mSwapchain->Recreate();
-
+			
 				Engine::Camera::GetRef().SetAspectRatio(Platform::MainWindow::GetRef().GetAspectRatio());
 				GUI::GetRef().SetImageCount(mSwapchain->GetImageCount());
-
+			
 				COSMOS_LOG(Logger::Trace, "Check if this event is neccessary");
 				int32_t width = (int32_t)mSwapchain->GetExtent().width;
 				int32_t height = (int32_t)mSwapchain->GetExtent().height;
-				
+			
 				Shared<Platform::WindowResizeEvent> event = CreateShared<Platform::WindowResizeEvent>(width, height);
 				mApplication->OnEvent(event);
 			}
-
+			
 			else if (res != VK_SUCCESS) {
 				COSMOS_ASSERT(false, "Failed to present swapchain image");
 			}
@@ -229,7 +242,7 @@ namespace Cosmos::Renderer
 			mPipelines.GetRef("Mesh")->Build();
 		}
 		
-		COSMOS_LOG(Logger::Todo, "Create Wireframe pipeline");
+		COSMOS_LOG(Logger::Info, "Create Wireframe pipeline");
 
 		// skybox
 		{
@@ -305,6 +318,8 @@ namespace Cosmos::Renderer
 
 	void Context::ManageRenderpasses(uint32_t swapchainImageIndex)
 	{
+		PROFILER_FUNCTION();
+
 		std::vector<VkClearValue> clearValues(2);
 		clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
 		clearValues[1].depthStencil = { 1.0f, 0 };
@@ -349,7 +364,15 @@ namespace Cosmos::Renderer
 			scissor.extent = mSwapchain->GetExtent();
 			vkCmdSetScissor(cmdBuffer, 0, 1, &scissor);
 
-			// not rendering on the swapchain render pass, as we'are using the viewport to draw stuff into
+			// if we have a viewport, don't draw on swapchain
+			if (!mRenderpasses.Exists("Viewport")) {
+
+				// render objects
+				mApplication->GetCurrentScene()->OnRender();
+
+				// render ui 
+				GUI::GetRef().OnRender();
+			}
 
 			vkCmdEndRenderPass(cmdBuffer);
 
@@ -399,6 +422,7 @@ namespace Cosmos::Renderer
 			vkCmdSetScissor(cmdBuffer, 0, 1, &scissor);
 
 			// render objects
+			mApplication->GetCurrentScene()->OnRender();
 			
 			// render ui 
 			GUI::GetRef().OnRender();

@@ -11,6 +11,7 @@
 namespace Cosmos::Platform { class EventBase; }
 namespace Cosmos::Editor { class Gizmos; }
 namespace Cosmos::Editor { class Grid; }
+namespace Cosmos::Editor { class PrefabHierarchy; }
 
 namespace Cosmos::Editor
 {
@@ -19,7 +20,7 @@ namespace Cosmos::Editor
 	public:
 
 		// constructor
-		Viewport();
+		Viewport(PrefabHierarchy* prefabHierarchy);
 
 		// destructor
 		virtual ~Viewport();
@@ -38,7 +39,7 @@ namespace Cosmos::Editor
 	private:
 
 		// draws a menubar into the viewport, for gizmos operation and more
-		void DrawMenuBar();
+		void DrawMenu();
 
 		// creates all renderer resources
 		void CreateRendererResources();
@@ -48,11 +49,14 @@ namespace Cosmos::Editor
 
 	private:
 
+		PrefabHierarchy* mPrefabHierarchy;
+
 		// sub-widgets
 		Unique<Gizmos> mGizmos;
 		Unique<Grid> mGrid;
 
 		// widget boundaries
+		ImVec2 mViewportPos;
 		ImVec2 mCurrentSize;
 		ImVec2 mContentRegionMin;
 		ImVec2 mContentRegionMax;

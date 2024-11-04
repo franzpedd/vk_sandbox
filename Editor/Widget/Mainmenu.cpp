@@ -1,6 +1,7 @@
 #include "Mainmenu.h"
 
 #include "DebugWindow.h"
+#include "Console.h"
 #include "Explorer.h"
 #include "ImDemo.h"
 #include "Core/Application.h"
@@ -23,20 +24,23 @@ namespace Cosmos::Editor
 	Mainmenu::Mainmenu(Application* application)
 		: Widget("Mainmenu"), mApplication(application)
 	{
-		mViewport = new Viewport();
-		Renderer::GUI::GetRef().AddWidget(mViewport);
-
-		mDebugWindow = new DebugWindow(mApplication);
-		Renderer::GUI::GetRef().AddWidget(mDebugWindow);
-
-		mExplorer = new Explorer(mApplication);
-		Renderer::GUI::GetRef().AddWidget(mExplorer);
-
 		mImDemo = new ImDemo();
 		Renderer::GUI::GetRef().AddWidget(mImDemo);
-
-		mPrefabHierarchy = new PrefabHierarchy(application);
+		
+		mConsole = new Console();
+		Renderer::GUI::GetRef().AddWidget(mConsole);
+		
+		mDebugWindow = new DebugWindow(mApplication);
+		Renderer::GUI::GetRef().AddWidget(mDebugWindow);
+		
+		mExplorer = new Explorer(mApplication);
+		Renderer::GUI::GetRef().AddWidget(mExplorer);
+		
+		mPrefabHierarchy = new PrefabHierarchy(application, mExplorer);
 		Renderer::GUI::GetRef().AddWidget(mPrefabHierarchy);
+		
+		mViewport = new Viewport(mPrefabHierarchy);
+		Renderer::GUI::GetRef().AddWidget(mViewport);
 	}
 
 	Mainmenu::~Mainmenu()
@@ -68,6 +72,12 @@ namespace Cosmos::Editor
 			bool info = mDebugWindow->IsOpened();
 			if (ImGui::Checkbox("Info", &info)) {
 				mDebugWindow->SetOpened(info);
+			}
+
+			// info box
+			bool console = mConsole->IsOpened();
+			if (ImGui::Checkbox("Console", &console)) {
+				mConsole->SetOpened(console);
 			}
 
 			// file explorer

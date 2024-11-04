@@ -2,41 +2,41 @@
 #if defined RENDERER_VULKAN
 #include "Wrapper/vulkan.h"
 
-#include <Common/Util/Memory.h>
-#include <string>
-#include <vector>
+#include "Core/ITexture.h"
 
 namespace Cosmos::Renderer::Vulkan
 {
-	class Texture2D
+	class Texture2D : public ITexture2D
 	{
 	public:
 
 		// constructor
-		Texture2D(std::string path, bool guiImage = false);
+		Texture2D(std::string path, bool gui = false);
 
 		// destructor
-		~Texture2D();
+		virtual ~Texture2D();
 
 	public:
 
 		// returns a reference to the image view
-		virtual inline VkImageView GetView() { return mView; }
+		virtual void* GetView() override;
 
 		// returns a reference to the image sampler
-		virtual inline VkSampler GetSampler() { return mSampler; }
+		virtual void* GetSampler() override;
+
+		// returns an user-interface descriptor set of the image, used to display the texture on the ui
+		virtual void* GetUIDescriptor() override;
 
 	private:
 
 		// loads the texture based on constructor's path
-		void LoadTexture(bool guiImage);
+		void LoadTexture(bool gui);
 
 		// creates mipmaps for the current bound texture
 		void CreateMipmaps();
 
 	private:
 
-		std::string mPath = {};
 		int32_t mWidth = 0;
 		int32_t mHeight = 0;
 		int32_t mMipLevels = 1;
@@ -44,9 +44,10 @@ namespace Cosmos::Renderer::Vulkan
 		VmaAllocation mMemory = VK_NULL_HANDLE;
 		VkImageView mView = VK_NULL_HANDLE;
 		VkSampler mSampler = VK_NULL_HANDLE;
+		VkDescriptorSet mDescriptorSet = VK_NULL_HANDLE;
 	};
 
-	class TextureCubemap
+	class TextureCubemap : public ITextureCubemap
 	{
 	public:
 
@@ -59,10 +60,13 @@ namespace Cosmos::Renderer::Vulkan
 	public:
 
 		// returns a reference to the image view
-		inline VkImageView GetView() { return mView; }
+		virtual void* GetView() override;
 
 		// returns a reference to the image sampler
-		inline VkSampler GetSampler() { return mSampler; }
+		virtual void* GetSampler() override;
+
+		// returns an user-interface descriptor set of the image, used to display the texture on the ui
+		virtual void* GetUIDescriptor() override;
 
 	private:
 
@@ -71,7 +75,6 @@ namespace Cosmos::Renderer::Vulkan
 
 	private:
 
-		std::vector<std::string> mPaths = {};
 		int32_t mWidth = 0;
 		int32_t mHeight = 0;
 		int32_t mMipLevels = 1;
@@ -79,6 +82,8 @@ namespace Cosmos::Renderer::Vulkan
 		VmaAllocation mMemory = VK_NULL_HANDLE;
 		VkImageView mView = VK_NULL_HANDLE;
 		VkSampler mSampler = VK_NULL_HANDLE;
+
+		VkDescriptorSet mDescriptor = VK_NULL_HANDLE;
 	};
 }
 #endif

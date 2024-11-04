@@ -13,6 +13,7 @@
 #include "Wrapper/imgui.h"
 
 #include <Common/Debug/Logger.h>
+#include <Common/Debug/Profiler.h>
 #include <Common/File/Filesystem.h>
 
 #include <Platform/Core/MainWindow.h>
@@ -55,6 +56,8 @@ namespace Cosmos::Renderer
 
 	GUI& GUI::GetRef()
 	{
+		PROFILER_FUNCTION();
+
 		if (!s_Instance) {
 			COSMOS_LOG(Logger::Error, "MainWindow has not been initialized\n");
 		}
@@ -64,6 +67,8 @@ namespace Cosmos::Renderer
 
 	GUI::GUI()
 	{
+		PROFILER_FUNCTION();
+
 		auto& renderer = Context::GetRef();
 		renderer.GetRenderpassesLibraryRef().Insert("UI", CreateShared<Vulkan::Renderpass>(renderer.GetDevice(), "UI", VK_SAMPLE_COUNT_1_BIT));
 
@@ -89,6 +94,8 @@ namespace Cosmos::Renderer
 
 	void GUI::OnUpdate()
 	{
+		PROFILER_FUNCTION();
+
 		ImGui_ImplVulkan_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
@@ -193,8 +200,8 @@ namespace Cosmos::Renderer
 		// update descriptor set
 		{
 			VkDescriptorImageInfo desc_image[1] = {};
-			desc_image[0].sampler = texture->GetSampler();
-			desc_image[0].imageView = texture->GetView();
+			desc_image[0].sampler = (VkSampler)texture->GetSampler();
+			desc_image[0].imageView = (VkImageView)texture->GetView();
 			desc_image[0].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
 			VkWriteDescriptorSet write_desc[1] = {};

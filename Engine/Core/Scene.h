@@ -40,7 +40,7 @@ namespace Cosmos::Engine
 	public:
 
 		// updates the scene logic
-		void OnUpdate(double timestep);
+		void OnUpdate(float timestep);
 
 		// draws the scene objects
 		void OnRender();
