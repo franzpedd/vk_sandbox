@@ -17,12 +17,23 @@ The building process:
 * Use the desired command to generate the desired solution ([See Here](https://premake.github.io/docs/Using-Premake));
 
 # Near Roadmap
-* Implement Benchmarking;
-* Properly implement Mesh Loader;
 * Add Lights Emitters and Implement Cluster Shading;
+* Implement PBR on meshes;
+* Add Native Scripting System;
 
 # Credits
-The dependencies this project uses at this momment are: [EnTT](https://github.com/skypjack/entt), [GLFW](https://github.com/glfw/glfw), [GLM](https://glm.g-truc.net/), [ImGui](https://github.com/ocornut/imgui/), [ImGuizmo](https://github.com/CedricGuillemet/ImGuizmo), [STB](https://github.com/nothings/stb), [VMA](https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator) and [Volk](https://github.com/zeux/volk);
+The dependencies this project uses at this momment are: 
+[EnTT](https://github.com/skypjack/entt), 
+[GLFW](https://github.com/glfw/glfw),
+[GLM](https://glm.g-truc.net/),
+[ImGui](https://github.com/ocornut/imgui/), 
+[ImGuizmo](https://github.com/CedricGuillemet/ImGuizmo), 
+[RapidJSON](https://github.com/Tencent/rapidjson), 
+[spdlog](https://github.com/gabime/spdlog), 
+[STB](https://github.com/nothings/stb), 
+[tinygltf](https://github.com/syoyo/tinygltf), 
+[VMA](https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator)
+[Volk](https://github.com/zeux/volk);
 It also uses [Premake](https://premake.github.io/) for solution generation, [Lucide](https://lucide.dev/) and [Font Awesome v4](https://fontawesome.com/v4) icons.
 
 I'm not creating this out of nowhere and in fact, I'm learning as I develop it. This requires a bunch of resources, some of these resources were made by:
