@@ -16,13 +16,17 @@ namespace Cosmos::Renderer::Vulkan
 
 		for (size_t i = 0; i < CONCURENTLY_RENDERED_FRAMES; i++)
 		{
-			mDevice->CreateBuffer
+			COSMOS_ASSERT
 			(
-				usage,
-				properties,
-				size,
-				&mBuffers[i],
-				&mMemories[i]
+				mDevice->CreateBuffer
+				(
+					usage,
+					properties,
+					size,
+					&mBuffers[i],
+					&mMemories[i]
+				) == VK_SUCCESS,
+				"Failed to create buffer"
 			);
 
 			vmaMapMemory(mDevice->GetAllocator(), mMemories[i], &mMappedData[i]);

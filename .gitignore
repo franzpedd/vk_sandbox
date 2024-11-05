@@ -11,6 +11,7 @@ Build/premake5.exe
 *.vcxproj.filters
 
 # Paths
+.vscode/
 Build/.vs
 Build/Bin
 Data/Profiler

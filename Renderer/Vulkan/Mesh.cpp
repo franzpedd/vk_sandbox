@@ -265,8 +265,7 @@ namespace Cosmos::Renderer::Vulkan
 		descPoolCI.maxSets = CONCURENTLY_RENDERED_FRAMES;
 		COSMOS_ASSERT(vkCreateDescriptorPool(renderer.GetDevice()->GetLogicalDevice(), &descPoolCI, nullptr, &mGPUData.descriptorPool) == VK_SUCCESS, "Failed to create descriptor pool");
 
-		VkDescriptorSetLayout descriptorSetLayout = renderer.GetPipelinesLibraryRef().GetRef("Mesh")->GetDescriptorSetLayout();
-		std::vector<VkDescriptorSetLayout> layouts(CONCURENTLY_RENDERED_FRAMES, descriptorSetLayout);
+		std::vector<VkDescriptorSetLayout> layouts(CONCURENTLY_RENDERED_FRAMES, renderer.GetPipelinesLibraryRef().GetRef("Mesh")->GetDescriptorSetLayout());
 
 		VkDescriptorSetAllocateInfo descSetAllocInfo = {};
 		descSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -283,24 +282,24 @@ namespace Cosmos::Renderer::Vulkan
 		Context& renderer = Context::GetRef();
 
 		for (size_t i = 0; i < CONCURENTLY_RENDERED_FRAMES; i++) {
-			std::vector<VkWriteDescriptorSet> descriptorWrites = {};
 
 			// 0: Camera data
 			{
-				VkDescriptorBufferInfo cameraUBOInfo = {};
-				cameraUBOInfo.buffer = renderer.GetBuffersLibraryRef().GetRef("Camera")->GetBuffersRef()[i];
-				cameraUBOInfo.offset = 0;
-				cameraUBOInfo.range = sizeof(CameraBuffer);
+				VkDescriptorBufferInfo bufferInfo = {};
+				bufferInfo.buffer = renderer.GetBuffersLibraryRef().GetRef("Camera")->GetBuffersRef()[i];
+				bufferInfo.offset = 0;
+				bufferInfo.range = sizeof(Renderer::Vulkan::CameraBuffer);
 
-				VkWriteDescriptorSet cameraUBODesc = {};
-				cameraUBODesc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-				cameraUBODesc.dstSet = mGPUData.descriptorSets[i];
-				cameraUBODesc.dstBinding = 0;
-				cameraUBODesc.dstArrayElement = 0;
-				cameraUBODesc.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-				cameraUBODesc.descriptorCount = 1;
-				cameraUBODesc.pBufferInfo = &cameraUBOInfo;
-				descriptorWrites.push_back(cameraUBODesc);
+				VkWriteDescriptorSet cameraDesc = {};
+				cameraDesc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				cameraDesc.dstSet = mGPUData.descriptorSets[i];
+				cameraDesc.dstBinding = 0;
+				cameraDesc.dstArrayElement = 0;
+				cameraDesc.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				cameraDesc.descriptorCount = 1;
+				cameraDesc.pBufferInfo = &bufferInfo;
+
+				vkUpdateDescriptorSets(renderer.GetDevice()->GetLogicalDevice(), 1, &cameraDesc, 0, nullptr);
 			}
 
 			// 1: Albedo map
@@ -310,18 +309,17 @@ namespace Cosmos::Renderer::Vulkan
 				colorMapInfo.imageView = (VkImageView)mMaterial.GetAlbedoTextureRef()->GetView();
 				colorMapInfo.sampler = (VkSampler)mMaterial.GetAlbedoTextureRef()->GetSampler();
 
-				VkWriteDescriptorSet colorMapDec = {};
-				colorMapDec.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-				colorMapDec.dstSet = mGPUData.descriptorSets[i];
-				colorMapDec.dstBinding = 4;
-				colorMapDec.dstArrayElement = 0;
-				colorMapDec.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-				colorMapDec.descriptorCount = 1;
-				colorMapDec.pImageInfo = &colorMapInfo;
-				descriptorWrites.push_back(colorMapDec);
-			}
+				VkWriteDescriptorSet colorMapDesc = {};
+				colorMapDesc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				colorMapDesc.dstSet = mGPUData.descriptorSets[i];
+				colorMapDesc.dstBinding = 4;
+				colorMapDesc.dstArrayElement = 0;
+				colorMapDesc.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+				colorMapDesc.descriptorCount = 1;
+				colorMapDesc.pImageInfo = &colorMapInfo;
 
-			vkUpdateDescriptorSets(renderer.GetDevice()->GetLogicalDevice(), (uint32_t)descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+				vkUpdateDescriptorSets(renderer.GetDevice()->GetLogicalDevice(), 1, &colorMapDesc, 0, nullptr);
+			}
 		}
     }
 

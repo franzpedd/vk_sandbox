@@ -81,7 +81,7 @@ namespace Cosmos::Renderer
 		// manage all active render passes
 		void ManageRenderpasses(uint32_t swapchainImageIndex);
 
-	private:
+	public:
 
 		Engine::Application* mApplication = nullptr;
 		uint32_t mCurrentFrame = 0;

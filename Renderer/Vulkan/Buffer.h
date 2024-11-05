@@ -52,6 +52,7 @@ namespace Cosmos::Renderer::Vulkan
 		alignas(16) glm::mat4 projection = glm::mat4(1.0f);
 		alignas(16) glm::mat4 viewProjection = glm::mat4(1.0f);
 		alignas(16) glm::vec3 cameraFront = glm::vec3(1.0f);
+		alignas(16) float padding = 0.0f; // this is vec3 alignment being 12
 	};
 
 	// information the renderer needs to know about the mesh (sent via push constant)

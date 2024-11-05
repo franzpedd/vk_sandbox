@@ -2,6 +2,7 @@
 
 #include "Widget/Dockspace.h"
 #include "Widget/Mainmenu.h"
+#include <Common/Debug/Logger.h>
 #include <Renderer/GUI/GUI.h>
 
 namespace Cosmos::Editor

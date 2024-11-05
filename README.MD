@@ -2,7 +2,7 @@
 Currently it's only a Vulkan Renderer on top of an Editor application (It uses C++17). You can check it's development screenshots under the [Documentation](Documentation) folder. If you're looking for a C++ Framework with a Vulkan Renderer this may be for you, if you're looking to create a game with it I would advise waiting for further development. If you'd like to create a suggestion or found any bug, feel free to create an issue.
 
 # Build
-Right now the project is only tested on Windows but a Linux version will be available soon.
+Right now the project is only tested on Windows and Linux;
 
 The Vulkan SDK is only required because of shader compilation, wich happens on runtime, this should change in the future in order to facilitate publishing an application. (You wouldn't want to enforce the installation of the Vulkan SDK on a client).
 

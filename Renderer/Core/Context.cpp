@@ -241,8 +241,6 @@ namespace Cosmos::Renderer
 			mPipelines.GetRef("Mesh")->GetCreateInfoRef().RSCI.cullMode = VK_CULL_MODE_BACK_BIT;
 			mPipelines.GetRef("Mesh")->Build();
 		}
-		
-		COSMOS_LOG(Logger::Info, "Create Wireframe pipeline");
 
 		// skybox
 		{
