@@ -92,22 +92,18 @@ namespace Cosmos::Platform
             glfwSetInputMode(mNativeWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             return;
         }
-
+        
         glfwSetInputMode(mNativeWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
 
     float MainWindow::GetAspectRatio()
     {
-        int32_t width = 0;
-        int32_t height = 0;
-        GetFrameBufferSize(&width, &height);
+        glm::vec2 size = GetFrameBufferSize();
 
-        if (height == 0) // avoid division by 0
-        {
-            return 1.0f;
-        }
+        // avoid division by 0
+        if (size.y == 0) return 1.0f;
 
-        float aspect = ((float)width / (float)height);
+        float aspect = ((float)size.x / (float)size.y);
         return aspect;
     }
 
@@ -200,6 +196,11 @@ namespace Cosmos::Platform
             });
     }
 
+    bool MainWindow::IsKeyDown(Keycode key)
+    {
+        return glfwGetKey(mNativeWindow, key) == GLFW_PRESS;
+    }
+
     const char** MainWindow::GetInstanceExtensions(unsigned int* count)
     {
 #if defined RENDERER_VULKAN
@@ -207,15 +208,94 @@ namespace Cosmos::Platform
 #endif
     }
 
-    void MainWindow::GetFrameBufferSize(int* width, int* height)
+    glm::vec2 MainWindow::GetFrameBufferSize()
     {
-        glfwGetFramebufferSize(mNativeWindow, width, height);
+        int width, height;
+        glfwGetFramebufferSize(mNativeWindow, &width, &height);
+
+        return { (float)width, (float)height };
+    }
+
+    glm::vec2 MainWindow::GetWindowSize()
+    {
+        int width, height;
+        glfwGetWindowSize(mNativeWindow, &width, &height);
+
+        return { (float)width, (float)height };
+    }
+
+    glm::vec2 MainWindow::GetCursorPos()
+    {
+        double mouseX, mouseY;
+        glfwGetCursorPos(mNativeWindow, &mouseX, &mouseY);
+
+        return { (float)mouseX, (float)mouseY };
+    }
+
+    //glm::vec2 MainWindow::GetViewportCursorPos(glm::vec2 viewportPos, glm::vec2 viewportSize)
+    //{
+    //    glm::vec2 outMousePos;
+    //
+    //    // get framebuffer size (handle DPI scaling)
+    //    int framebufferWidth, framebufferHeight;
+    //    glfwGetFramebufferSize(mNativeWindow, &framebufferWidth, &framebufferHeight);
+    //
+    //    // get window size
+    //    int windowWidth, windowHeight;
+    //    glfwGetWindowSize(mNativeWindow, &windowWidth, &windowHeight);
+    //
+    //    // get cursor position in window coordinates
+    //    double mouseX, mouseY;
+    //    glfwGetCursorPos(mNativeWindow, &mouseX, &mouseY);
+    //
+    //    // calculate scaling factor
+    //    float scaleX = (float)(framebufferWidth / windowWidth);
+    //    float scaleY = (float)(framebufferHeight / windowHeight);
+    //
+    //    // adjust mouse coordinates to framebuffer space
+    //    double adjustedMouseX = mouseX * scaleX;
+    //    double adjustedMouseY = mouseY * scaleY;
+    //
+    //    // convert to Vulkan's top-left origin
+    //    uint32_t vulkanMouseX = (uint32_t)(adjustedMouseX);
+    //    uint32_t vulkanMouseY = framebufferHeight - (uint32_t)(adjustedMouseY) - 1;
+    //
+    //    // adjust for viewport offset
+    //    if (vulkanMouseX >= (uint32_t)(viewportPos.x) &&
+    //        vulkanMouseX < (uint32_t)(viewportPos.x + viewportSize.x) &&
+    //        vulkanMouseY >= (uint32_t)(viewportPos.y) &&
+    //        vulkanMouseY < (uint32_t)(viewportPos.y + viewportSize.y)) {
+    //        outMousePos.x = vulkanMouseX - viewportPos.x;
+    //        outMousePos.y = vulkanMouseY - viewportPos.y;
+    //    }
+    //
+    //    // mouse is outside the viewport
+    //    else {
+    //        
+    //        outMousePos.x = outMousePos.y = 0;
+    //    }
+    //
+    //    return outMousePos;
+    //}
+
+    glm::vec2 MainWindow::GetViewportCursorPos(const glm::vec2& viewportPosition, const glm::vec2& viewportSize)
+    {
+        // window size in screen coordinates
+        glm::vec2 windowSize = Platform::MainWindow::GetRef().GetWindowSize();
+
+        // relative mouse position on viewport
+        glm::vec2 relativePos = GetCursorPos() - viewportPosition;
+
+        // normalize mouse position to viewport position
+        glm::vec2 normalized = { relativePos / viewportSize };
+
+        // final coordinates
+        return { windowSize * normalized };
     }
 
     void MainWindow::StaleResizeFramebuffer()
     {
-        while (glfwGetWindowAttrib(mNativeWindow, GLFW_ICONIFIED))
-        {
+        while (glfwGetWindowAttrib(mNativeWindow, GLFW_ICONIFIED)) {
             glfwWaitEvents();
         }
     }

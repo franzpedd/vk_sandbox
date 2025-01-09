@@ -1,7 +1,10 @@
 #if defined RENDERER_VULKAN
 #include "Renderpass.h"
 
+#include "Context.h"
 #include "Device.h"
+#include "Core/Defines.h"
+#include <Common/Debug/Logger.h>
 
 namespace Cosmos::Renderer::Vulkan
 {

@@ -48,18 +48,17 @@ namespace Cosmos::Renderer::Vulkan
 	// information the renderer needs to know about the camera
 	struct CameraBuffer
 	{
-		alignas(16) glm::mat4 view = glm::mat4(1.0f);
-		alignas(16) glm::mat4 projection = glm::mat4(1.0f);
-		alignas(16) glm::mat4 viewProjection = glm::mat4(1.0f);
-		alignas(16) glm::vec3 cameraFront = glm::vec3(1.0f);
-		alignas(16) float padding = 0.0f; // this is vec3 alignment being 12
+		alignas(8) glm::vec2 mousepos = glm::vec2(0.0f);		// holds the current mouse position
+		alignas(16) glm::mat4 view = glm::mat4(1.0f);			// holds the view matrix
+		alignas(16) glm::mat4 projection = glm::mat4(1.0f);		// holds the projection matrix
 	};
 
-	// information the renderer needs to know about the mesh (sent via push constant)
-	struct MeshBuffer
+	// information the renderer needs to know via push constant
+	struct PushConstant
 	{
-		alignas(8) uint64_t id = 0;
-		alignas(16) glm::mat4 model = glm::mat4(1.0f);
+		alignas(4) uint32_t selected = 0;						// marks if the object is selected
+		alignas(8) uint64_t id = 0;								// holds the unique identifier of the object
+		alignas(16) glm::mat4 model = glm::mat4(1.0f);			// holds the model matrix of the object
 	};
 }
 #endif

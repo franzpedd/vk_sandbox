@@ -1,0 +1,42 @@
+Name = floor
+Hierarchy
+{
+	Entities
+	{
+		8585265575392558137
+		{
+			ID = 8585265575392558137
+			Editor
+			{
+				Selectable = 1
+			}
+			Name = floor
+			Transform
+			{
+				Translation
+				{
+					X = 0.000000
+					Y = 0.050000
+					Z = 0.000000
+				}
+				Rotation
+				{
+					X = 0.000000
+					Y = 0.000000
+					Z = 0.000000
+				}
+				Scale
+				{
+					X = 1.000000
+					Y = 1.000000
+					Z = 1.000000
+				}
+			}
+			Mesh
+			{
+				Path = ../Data/Mesh/plane.gltf
+				Albedo = ../Data//Texture/Default/default_1024_grey.png
+			}
+		}
+	}
+}

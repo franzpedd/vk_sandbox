@@ -23,7 +23,7 @@ namespace Cosmos::Engine
         Prefab(Scene* scene, uint64_t id, std::string name = "New Prefab");
 
         // destructor
-        ~Prefab();
+        ~Prefab() = default;
 
         // returns the prefab's name
         inline std::string& GetNameRef() { return mName; }
@@ -50,6 +50,9 @@ namespace Cosmos::Engine
 
         // removes and destroys a given entity
         void EraseEntity(Entity* entity, bool eraseFromMultimap = true);
+
+        // duplicates a given entity into this prefab
+        void DuplicateEntity(Entity* entity, bool considerOtherGroups = true);
 
     public:
 

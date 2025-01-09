@@ -3,15 +3,16 @@
 #include "PrefabHierarchy.h"
 
 #include <Common/Core/Defines.h>
+#include <Common/File/Filesystem.h>
 #include <Common/Debug/Logger.h>
 
 #include <Engine/Entity/Entity.h>
-#include <Engine/Entity/Components/BaseComponents.h>
-
+#include <Engine/Entity/Script.h>
+#include <Engine/Entity/Components/AllComponents.h>
 #include <Renderer/Core/IMesh.h>
 #include <Renderer/Core/ITexture.h>
 #include <Renderer/GUI/CustomWidget.h>
-#include <Renderer/GUI/GUI.h>
+#include <Renderer/Core/IGUI.h>
 #include <Renderer/GUI/Icon.h>
 #include <Renderer/Wrapper/imgui.h>
 
@@ -54,6 +55,10 @@ namespace Cosmos::Editor
 	void ComponentDisplayer::UpdateEntityComponents(Engine::Entity* entity)
 	{
 		if (entity == nullptr) {
+			return;
+		}
+
+		if (!entity->HasComponent<Engine::IDComponent>()) {
 			return;
 		}
 

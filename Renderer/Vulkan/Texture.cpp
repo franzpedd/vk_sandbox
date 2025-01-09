@@ -1,10 +1,10 @@
 #if defined RENDERER_VULKAN
 #include "Texture.h"
 
+#include "Context.h"
 #include "Device.h"
+#include "GUI.h"
 #include "Renderpass.h"
-#include "Core/Context.h"
-#include "GUI/GUI.h"
 
 #include <Common/Debug/Logger.h>
 #include <Platform/Core/PlatformDetection.h>
@@ -30,10 +30,10 @@ namespace Cosmos::Renderer::Vulkan
 		ITexture2D::mPath = path;
 
 		LoadTexture(gui);
-		auto& renderer = Context::GetRef();
+		auto* renderer = (Vulkan::Context*)Context::GetRef();
 
 		// image view
-		mView = renderer.GetDevice()->CreateImageView
+		mView = renderer->GetDevice()->CreateImageView
 		(
 			mImage,
 			VK_FORMAT_R8G8B8A8_SRGB,
@@ -42,7 +42,7 @@ namespace Cosmos::Renderer::Vulkan
 		);
 
 		// sampler
-		mSampler = renderer.GetDevice()->CreateSampler
+		mSampler = renderer->GetDevice()->CreateSampler
 		(
 			VK_FILTER_LINEAR,
 			VK_FILTER_LINEAR,
@@ -52,18 +52,46 @@ namespace Cosmos::Renderer::Vulkan
 			(float)mMipLevels
 		);
 
-		mDescriptorSet = (VkDescriptorSet)GUI::GetRef().AddTexture(mSampler, mView);
+		mDescriptorSet = (VkDescriptorSet)GUI::GetRef()->AddTexture(mSampler, mView);
+	}
+
+	Texture2D::Texture2D(const BufferInfo& info, bool gui)
+	{
+		LoadTextureFromBuffer(info, gui);
+		auto* renderer = (Vulkan::Context*)Context::GetRef();
+
+		// image view
+		mView = renderer->GetDevice()->CreateImageView
+		(
+			mImage,
+			VK_FORMAT_R8G8B8A8_SRGB,
+			VK_IMAGE_ASPECT_COLOR_BIT,
+			mMipLevels
+		);
+
+		// sampler
+		mSampler = renderer->GetDevice()->CreateSampler
+		(
+			VK_FILTER_LINEAR,
+			VK_FILTER_LINEAR,
+			VK_SAMPLER_ADDRESS_MODE_REPEAT,
+			VK_SAMPLER_ADDRESS_MODE_REPEAT,
+			VK_SAMPLER_ADDRESS_MODE_REPEAT,
+			(float)mMipLevels
+		);
+
+		mDescriptorSet = (VkDescriptorSet)GUI::GetRef()->AddTexture(mSampler, mView);
 	}
 
 	Texture2D::~Texture2D()
 	{
-		auto& renderer = Context::GetRef();
-		vkDeviceWaitIdle(renderer.GetDevice()->GetLogicalDevice());
+		auto* renderer = (Vulkan::Context*)Context::GetRef();
+		vkDeviceWaitIdle(renderer->GetDevice()->GetLogicalDevice());
 
-		vkDestroyImageView(renderer.GetDevice()->GetLogicalDevice(), mView, nullptr);
-		vkDestroyImage(renderer.GetDevice()->GetLogicalDevice(), mImage, nullptr);
-		vmaFreeMemory(renderer.GetDevice()->GetAllocator(), mMemory);
-		vkDestroySampler(renderer.GetDevice()->GetLogicalDevice(), mSampler, nullptr);
+		vkDestroyImageView(renderer->GetDevice()->GetLogicalDevice(), mView, nullptr);
+		vkDestroyImage(renderer->GetDevice()->GetLogicalDevice(), mImage, nullptr);
+		vmaFreeMemory(renderer->GetDevice()->GetAllocator(), mMemory);
+		vkDestroySampler(renderer->GetDevice()->GetLogicalDevice(), mSampler, nullptr);
 	}
 
 	void* Texture2D::GetView()
@@ -84,7 +112,9 @@ namespace Cosmos::Renderer::Vulkan
 	void Texture2D::LoadTexture(bool gui)
 	{
 		int32_t channels;
-		stbi_uc* pixels = stbi_load(mPath.c_str(), &mWidth, &mHeight, &channels, STBI_rgb_alpha);
+		stbi_uc* pixels = nullptr;
+
+		pixels = stbi_load(mPath.c_str(), &mWidth, &mHeight, &channels, STBI_rgb_alpha);
 
 		if (pixels == nullptr) {
 			COSMOS_LOG(Logger::Assert, "Failed to load %s texture", mPath.c_str());
@@ -97,9 +127,9 @@ namespace Cosmos::Renderer::Vulkan
 		// create staging buffer for image
 		VkBuffer stagingBuffer;
 		VmaAllocation stagingMemory;
-		auto& renderer = Context::GetRef();
+		Context* renderer = (Vulkan::Context*)Context::GetRef();
 
-		renderer.GetDevice()->CreateBuffer
+		renderer->GetDevice()->CreateBuffer
 		(
 			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -108,17 +138,17 @@ namespace Cosmos::Renderer::Vulkan
 			&stagingMemory
 		);
 
-		void* data = nullptr;
-		vmaMapMemory(renderer.GetDevice()->GetAllocator(), stagingMemory, &data);
-		memcpy(data, pixels, (size_t)imgSize);
-		vmaUnmapMemory(renderer.GetDevice()->GetAllocator(), stagingMemory);
+		void* gpuData = nullptr;
+		vmaMapMemory(renderer->GetDevice()->GetAllocator(), stagingMemory, &gpuData);
+		memcpy(gpuData, pixels, (size_t)imgSize);
+		vmaUnmapMemory(renderer->GetDevice()->GetAllocator(), stagingMemory);
 
 		stbi_image_free(pixels);
 
-		auto& renderpass = renderer.GetMainRenderpassRef();
+		auto& renderpass = renderer->GetMainRenderpassRef();
 
 		// create image resource
-		renderer.GetDevice()->CreateImage
+		renderer->GetDevice()->CreateImage
 		(
 			mWidth,
 			mHeight,
@@ -134,7 +164,7 @@ namespace Cosmos::Renderer::Vulkan
 		);
 
 		// transition layout to transfer data
-		renderer.GetDevice()->TransitionImageLayout
+		renderer->GetDevice()->TransitionImageLayout
 		(
 			renderpass->GetCommandPoolRef(),
 			mImage,
@@ -145,7 +175,7 @@ namespace Cosmos::Renderer::Vulkan
 
 		// copy buffer to image
 		{
-			VkCommandBuffer cmdBuffer = renderer.GetDevice()->BeginSingleTimeCommand(renderpass->GetCommandPoolRef());
+			VkCommandBuffer cmdBuffer = renderer->GetDevice()->BeginSingleTimeCommand(renderpass->GetCommandPoolRef());
 
 			VkBufferImageCopy region = {};
 			region.bufferOffset = 0;
@@ -163,22 +193,108 @@ namespace Cosmos::Renderer::Vulkan
 			region.imageExtent.depth = 1;
 			vkCmdCopyBufferToImage(cmdBuffer, stagingBuffer, mImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
-			renderer.GetDevice()->EndSingleTimeCommand(renderpass->GetCommandPoolRef(), cmdBuffer);
+			renderer->GetDevice()->EndSingleTimeCommand(renderpass->GetCommandPoolRef(), cmdBuffer);
 		}
 
 		// free staging buffer
-		vkDestroyBuffer(renderer.GetDevice()->GetLogicalDevice(), stagingBuffer, nullptr);
-		vmaFreeMemory(renderer.GetDevice()->GetAllocator(), stagingMemory);
+		vkDestroyBuffer(renderer->GetDevice()->GetLogicalDevice(), stagingBuffer, nullptr);
+		vmaFreeMemory(renderer->GetDevice()->GetAllocator(), stagingMemory);
+
+		CreateMipmaps();
+	}
+
+	void Texture2D::LoadTextureFromBuffer(const BufferInfo& info, bool gui)
+	{
+		mWidth = info.width;
+		mHeight = info.height;
+
+		mMipLevels = gui ? 1 : (uint32_t)(std::floor(std::log2(std::max(mWidth, mHeight)))) + 1;
+		VkDeviceSize imgSize = (VkDeviceSize)info.length;
+
+		// create staging buffer for image
+		VkBuffer stagingBuffer;
+		VmaAllocation stagingMemory;
+		Context* renderer = (Vulkan::Context*)Context::GetRef();
+
+		renderer->GetDevice()->CreateBuffer
+		(
+			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			imgSize,
+			&stagingBuffer,
+			&stagingMemory
+		);
+
+		// Copy texture data into staging buffer
+		void* gpuData = nullptr;
+		vmaMapMemory(renderer->GetDevice()->GetAllocator(), stagingMemory, &gpuData);
+		memcpy(gpuData, info.data, (size_t)imgSize);
+		vmaUnmapMemory(renderer->GetDevice()->GetAllocator(), stagingMemory);
+
+		auto& renderpass = renderer->GetMainRenderpassRef();
+
+		// create image resource
+		renderer->GetDevice()->CreateImage
+		(
+			mWidth,
+			mHeight,
+			mMipLevels,
+			1,
+			gui ? VK_SAMPLE_COUNT_1_BIT : renderpass->GetMSAA(),
+			VK_FORMAT_R8G8B8A8_SRGB,
+			VK_IMAGE_TILING_OPTIMAL,
+			VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			mImage,
+			mMemory
+		);
+
+		// transition layout to transfer data
+		renderer->GetDevice()->TransitionImageLayout
+		(
+			renderpass->GetCommandPoolRef(),
+			mImage,
+			VK_IMAGE_LAYOUT_UNDEFINED,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			mMipLevels
+		);
+
+		// copy buffer to image
+		{
+			VkCommandBuffer cmdBuffer = renderer->GetDevice()->BeginSingleTimeCommand(renderpass->GetCommandPoolRef());
+
+			VkBufferImageCopy region = {};
+			region.bufferOffset = 0;
+			region.bufferRowLength = 0;
+			region.bufferImageHeight = 0;
+			region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			region.imageSubresource.mipLevel = 0;
+			region.imageSubresource.baseArrayLayer = 0;
+			region.imageSubresource.layerCount = 1;
+			region.imageOffset.x = 0;
+			region.imageOffset.y = 0;
+			region.imageOffset.z = 0;
+			region.imageExtent.width = mWidth;
+			region.imageExtent.height = mHeight;
+			region.imageExtent.depth = 1;
+			vkCmdCopyBufferToImage(cmdBuffer, stagingBuffer, mImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+			renderer->GetDevice()->EndSingleTimeCommand(renderpass->GetCommandPoolRef(), cmdBuffer);
+		}
+
+		// free staging buffer
+		vkDestroyBuffer(renderer->GetDevice()->GetLogicalDevice(), stagingBuffer, nullptr);
+		vmaFreeMemory(renderer->GetDevice()->GetAllocator(), stagingMemory);
 
 		CreateMipmaps();
 	}
 
 	void Texture2D::CreateMipmaps()
 	{
-		auto& renderer = Context::GetRef();
-		auto& renderpass = renderer.GetMainRenderpassRef();
+		Context* renderer = (Vulkan::Context*)Context::GetRef();
+		auto& renderpass = renderer->GetMainRenderpassRef();
 
-		VkCommandBuffer commandBuffer = renderer.GetDevice()->BeginSingleTimeCommand(renderpass->GetCommandPoolRef());
+		VkCommandBuffer commandBuffer = renderer->GetDevice()->BeginSingleTimeCommand(renderpass->GetCommandPoolRef());
 
 		VkImageMemoryBarrier barrier = {};
 		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -234,20 +350,20 @@ namespace Cosmos::Renderer::Vulkan
 		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 		vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
 
-		renderer.GetDevice()->EndSingleTimeCommand(renderpass->GetCommandPoolRef(), commandBuffer);
+		renderer->GetDevice()->EndSingleTimeCommand(renderpass->GetCommandPoolRef(), commandBuffer);
 	}
 
 	TextureCubemap::TextureCubemap(std::vector<std::string> paths)
 	{
 		ITextureCubemap::mPaths = paths;
 
-		auto& renderer = Context::GetRef();
+		Context* renderer = (Vulkan::Context*)Context::GetRef();
 		COSMOS_LOG(Logger::Info, "Create mipmaps for Vulkan Cubemaps");
 
 		LoadTextures();
 
 		// image view
-		mView = renderer.GetDevice()->CreateImageView
+		mView = renderer->GetDevice()->CreateImageView
 		(
 			mImage,
 			VK_FORMAT_R8G8B8A8_SRGB,
@@ -258,7 +374,7 @@ namespace Cosmos::Renderer::Vulkan
 		);
 
 		// sampler
-		mSampler = renderer.GetDevice()->CreateSampler
+		mSampler = renderer->GetDevice()->CreateSampler
 		(
 			VK_FILTER_LINEAR,
 			VK_FILTER_LINEAR,
@@ -268,18 +384,18 @@ namespace Cosmos::Renderer::Vulkan
 			(float)mMipLevels
 		);
 
-		mDescriptor = (VkDescriptorSet)GUI::GetRef().AddTexture(mSampler, mView);
+		mDescriptor = (VkDescriptorSet)GUI::GetRef()->AddTexture(mSampler, mView);
 	}
 
 	TextureCubemap::~TextureCubemap()
 	{
-		auto& renderer = Context::GetRef();
-		vkDeviceWaitIdle(renderer.GetDevice()->GetLogicalDevice());
+		auto* renderer = (Vulkan::Context*)Context::GetRef();
+		vkDeviceWaitIdle(renderer->GetDevice()->GetLogicalDevice());
 
-		vkDestroyImageView(renderer.GetDevice()->GetLogicalDevice(), mView, nullptr);
-		vkDestroyImage(renderer.GetDevice()->GetLogicalDevice(), mImage, nullptr);
-		vmaFreeMemory(renderer.GetDevice()->GetAllocator(), mMemory);
-		vkDestroySampler(renderer.GetDevice()->GetLogicalDevice(), mSampler, nullptr);
+		vkDestroyImageView(renderer->GetDevice()->GetLogicalDevice(), mView, nullptr);
+		vkDestroyImage(renderer->GetDevice()->GetLogicalDevice(), mImage, nullptr);
+		vmaFreeMemory(renderer->GetDevice()->GetAllocator(), mMemory);
+		vkDestroySampler(renderer->GetDevice()->GetLogicalDevice(), mSampler, nullptr);
 	}
 
 	void* TextureCubemap::GetView()
@@ -299,7 +415,7 @@ namespace Cosmos::Renderer::Vulkan
 
 	void TextureCubemap::LoadTextures()
 	{
-		auto& renderer = Context::GetRef();
+		auto* renderer = (Vulkan::Context*)Context::GetRef();
 		COSMOS_ASSERT(mPaths.size() == 6, "A cubemap must have 6 textures");
 
 		VkBuffer stagingBuffer = VK_NULL_HANDLE;
@@ -309,7 +425,7 @@ namespace Cosmos::Renderer::Vulkan
 		VkDeviceSize imageSize;
 		int32_t channels;
 
-		void* data;
+		void* gpuData;
 		uint64_t memAddress;
 
 		for (uint8_t i = 0; i < mPaths.size(); i++)
@@ -328,7 +444,7 @@ namespace Cosmos::Renderer::Vulkan
 				layerSize = mWidth * mHeight * 4;
 				imageSize = layerSize * mPaths.size();
 
-				renderer.GetDevice()->CreateBuffer
+				renderer->GetDevice()->CreateBuffer
 				(
 					VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 					VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -337,8 +453,8 @@ namespace Cosmos::Renderer::Vulkan
 					&stagingBufferMemory
 				);
 
-				vmaMapMemory(renderer.GetDevice()->GetAllocator(), stagingBufferMemory, &data);
-				memAddress = reinterpret_cast<uint64_t>(data);
+				vmaMapMemory(renderer->GetDevice()->GetAllocator(), stagingBufferMemory, &gpuData);
+				memAddress = reinterpret_cast<uint64_t>(gpuData);
 			}
 
 			memcpy(reinterpret_cast<uint8_t*>(memAddress), static_cast<void*>(pixels), static_cast<size_t>(layerSize));
@@ -347,14 +463,14 @@ namespace Cosmos::Renderer::Vulkan
 
 			if (i == 5)
 			{
-				vmaUnmapMemory(renderer.GetDevice()->GetAllocator(), stagingBufferMemory);
+				vmaUnmapMemory(renderer->GetDevice()->GetAllocator(), stagingBufferMemory);
 			}
 		}
 
-		auto& renderpass = renderer.GetMainRenderpassRef();
+		auto& renderpass = renderer->GetMainRenderpassRef();
 
 		// create image resource
-		renderer.GetDevice()->CreateImage
+		renderer->GetDevice()->CreateImage
 		(
 			mWidth,
 			mHeight,
@@ -371,7 +487,7 @@ namespace Cosmos::Renderer::Vulkan
 		);
 
 		// transition layout to transfer data
-		renderer.GetDevice()->TransitionImageLayout
+		renderer->GetDevice()->TransitionImageLayout
 		(
 			renderpass->GetCommandPoolRef(),
 			mImage,
@@ -383,7 +499,7 @@ namespace Cosmos::Renderer::Vulkan
 
 		// copy buffer to image
 		{
-			VkCommandBuffer cmdBuffer = renderer.GetDevice()->BeginSingleTimeCommand(renderpass->GetCommandPoolRef());
+			VkCommandBuffer cmdBuffer = renderer->GetDevice()->BeginSingleTimeCommand(renderpass->GetCommandPoolRef());
 
 			VkBufferImageCopy region = {};
 			region.bufferOffset = 0;
@@ -401,11 +517,11 @@ namespace Cosmos::Renderer::Vulkan
 			region.imageExtent.depth = 1;
 			vkCmdCopyBufferToImage(cmdBuffer, stagingBuffer, mImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
-			renderer.GetDevice()->EndSingleTimeCommand(renderpass->GetCommandPoolRef(), cmdBuffer);
+			renderer->GetDevice()->EndSingleTimeCommand(renderpass->GetCommandPoolRef(), cmdBuffer);
 		}
 
 		// transition layout to shader read only
-		renderer.GetDevice()->TransitionImageLayout
+		renderer->GetDevice()->TransitionImageLayout
 		(
 			renderpass->GetCommandPoolRef(),
 			mImage,
@@ -416,8 +532,8 @@ namespace Cosmos::Renderer::Vulkan
 		);
 
 		// free staging buffer
-		vkDestroyBuffer(renderer.GetDevice()->GetLogicalDevice(), stagingBuffer, nullptr);
-		vmaFreeMemory(renderer.GetDevice()->GetAllocator(), stagingBufferMemory);
+		vkDestroyBuffer(renderer->GetDevice()->GetLogicalDevice(), stagingBuffer, nullptr);
+		vmaFreeMemory(renderer->GetDevice()->GetAllocator(), stagingBufferMemory);
 	}
 }
 #endif

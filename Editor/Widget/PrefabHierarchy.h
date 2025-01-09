@@ -107,6 +107,7 @@ namespace Cosmos::Editor
 		// should become vectors when multi-selection are enabled
 		Engine::Prefab* mRenamingPrefab = nullptr;
 		Engine::Entity* mRenamingEntity = nullptr;
-		Engine::Entity* mLastSelectedEntity = nullptr;	
+		
+		Engine::Entity* mLastSelectedEntity = nullptr;
 	};
 }

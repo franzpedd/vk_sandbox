@@ -3,13 +3,18 @@
 #include <Common/Math/Math.h>
 #include <Engine/Entity/Camera.h>
 #include <Engine/Entity/Entity.h>
-#include <Engine/Entity/Components/BaseComponents.h>
+#include <Engine/Entity/Components/TransformComponent.h>
+#include <Renderer/Wrapper/imgui.h>
 
 namespace Cosmos::Editor
 {
-	void Gizmos::OnUpdate(Engine::Entity* entity, ImVec2 viewportSize)
+	void Gizmos::OnUpdate(Engine::Entity* entity, glm::vec2 viewportSize)
 	{
 		if (entity == nullptr || mMode == GizmosMode::Undefined) {
+			return;
+		}
+
+		if (!entity->HasComponent<Engine::TransformComponent>()) {
 			return;
 		}
 		
@@ -25,7 +30,7 @@ namespace Cosmos::Editor
 		auto& camera = Engine::Camera::GetRef();
 		glm::mat4 view = camera.GetViewRef();
 		glm::mat4 proj = glm::perspectiveRH(glm::radians(camera.GetFov()), viewportSize.x / viewportSize.y, camera.GetNear(), camera.GetFar());
-		
+
 		// entity
 		auto& tc = entity->GetComponent<Engine::TransformComponent>();
 		glm::mat4 transform = tc.GetTransform();

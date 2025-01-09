@@ -15,4 +15,6 @@ Build/premake5.exe
 Build/.vs
 Build/Bin
 Data/Profiler
-Data/Scene
+Data/Texture/Game
+Game
+Thirdparty/steam_sdk

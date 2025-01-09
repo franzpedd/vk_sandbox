@@ -2,15 +2,17 @@
 #include "Mesh.h"
 
 #include "Buffer.h"
+#include "Context.h"
 #include "Device.h"
 #include "Pipeline.h"
 #include "Renderpass.h"
 #include "Texture.h"
-#include "Renderer/Core/Context.h"
 #include "Wrapper/tinygltf.h"
+
 #include <Common/Core/Defines.h>
 #include <Common/Debug/Logger.h>
 #include <Common/File/Filesystem.h>
+
 #include <filesystem>
 
 namespace Cosmos::Renderer::Vulkan
@@ -31,27 +33,54 @@ namespace Cosmos::Renderer::Vulkan
 		ProcessAnimation(timestep);
 	}
 
-	void Mesh::OnRender(const glm::mat4& transform, uint64_t id)
+	void Mesh::OnRender(const glm::mat4& transform, uint64_t id, IContext::Stage stage)
 	{
 		if (!mLoaded) {
 			return;
 		}
 
-		Context& renderer = Context::GetRef();
+		Context* renderer = (Vulkan::Context*)Context::GetRef();
 		VkDeviceSize offsets[] = { 0 };
-		VkCommandBuffer cmdBuffer = renderer.GetMainRenderpassRef()->GetCommandfuffersRef()[renderer.GetCurrentFrame()];
-		VkPipelineLayout pipelineLayout = renderer.GetPipelinesLibraryRef().GetRef("Mesh")->GetPipelineLayout();
-		VkPipeline pipeline = renderer.GetPipelinesLibraryRef().GetRef("Mesh")->GetPipeline();
+
+		VkCommandBuffer cmdBuffer = VK_NULL_HANDLE;
+		VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
+		VkPipeline pipelinePtr = VK_NULL_HANDLE;
+
+		switch (stage)
+		{
+			case Cosmos::Renderer::IContext::Stage::Default: 
+			{ 
+				cmdBuffer = renderer->GetMainRenderpassRef()->GetCommandfuffersRef()[renderer->GetCurrentFrame()];
+				pipelineLayout = renderer->GetPipelinesLibraryRef().GetRef("Mesh")->GetPipelineLayout();
+				pipelinePtr = renderer->GetPipelinesLibraryRef().GetRef("Mesh")->GetPipeline();
+				break; 
+			}
+
+			case Cosmos::Renderer::IContext::Stage::Picking:
+			{
+				cmdBuffer = renderer->GetRenderpassesLibraryRef().GetRef("Picking")->GetCommandfuffersRef()[renderer->GetCurrentFrame()];
+				pipelineLayout = renderer->GetPipelinesLibraryRef().GetRef("Picking")->GetPipelineLayout();
+				pipelinePtr = renderer->GetPipelinesLibraryRef().GetRef("Picking")->GetPipeline();
+				break;
+			}
+			
+			case Cosmos::Renderer::IContext::Stage::Wireframe:
+			{
+				COSMOS_LOG(Logger::Error, "Not implemented");
+				break;
+			}
+		}
 		
 		vkCmdBindVertexBuffers(cmdBuffer, 0, 1, &mGPUData.vertexBuffer, offsets);
 		vkCmdBindIndexBuffer(cmdBuffer, mGPUData.indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-		vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &mGPUData.descriptorSets[renderer.GetCurrentFrame()], 0, NULL);
-		vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+		vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &mGPUData.descriptorSets[renderer->GetCurrentFrame()], 0, NULL);
+		vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelinePtr);
 		
-		MeshBuffer constants = {};
+		PushConstant constants = {};
 		constants.id = id;
+		constants.selected = (uint32_t)mSelected;
 		constants.model = transform;
-		vkCmdPushConstants(cmdBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(MeshBuffer), &constants);
+		vkCmdPushConstants(cmdBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstant), &constants);
 		
 		for (auto& node : mNodes) {
 			RenderNode(node, cmdBuffer);
@@ -64,7 +93,8 @@ namespace Cosmos::Renderer::Vulkan
 			return false;
 		}
 
-		VkResult res = vkGetFenceStatus(Context::GetRef().GetDevice()->GetLogicalDevice(), mGPUData.transferFence);
+		Context* renderer = (Vulkan::Context*)Context::GetRef();
+		VkResult res = vkGetFenceStatus(renderer->GetDevice()->GetLogicalDevice(), mGPUData.transferFence);
 		return res == VK_SUCCESS ? false : true;
 	}
 
@@ -102,7 +132,7 @@ namespace Cosmos::Renderer::Vulkan
 		mName = std::filesystem::path(path).filename().string();
 		mPath = path;
 
-		mMaterial.GetNameRef() = "Default Material";
+		mMaterial.SetName("Default Material");
 		mMaterial.GetAlbedoTextureRef() = CreateShared<Texture2D>(GetAssetSubDir("Texture/Default/default_1024_grey.png"));
 
 		GLTF::Node::MeshLoaderInfo info = {};
@@ -157,9 +187,9 @@ namespace Cosmos::Renderer::Vulkan
 			VmaAllocation memory;
 		} vertexStaging, indexStaging;
 
-		Context& renderer = Context::GetRef();
+		Context* renderer = (Vulkan::Context*)Context::GetRef();
 
-		COSMOS_ASSERT(renderer.GetDevice()->CreateBuffer
+		COSMOS_ASSERT(renderer->GetDevice()->CreateBuffer
 		(
 			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -171,7 +201,7 @@ namespace Cosmos::Renderer::Vulkan
 
 		if (indicesBufferSize > 0)
 		{
-			COSMOS_ASSERT(renderer.GetDevice()->CreateBuffer
+			COSMOS_ASSERT(renderer->GetDevice()->CreateBuffer
 			(
 				VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -183,7 +213,7 @@ namespace Cosmos::Renderer::Vulkan
 		}
 
 		// create local buffers
-		COSMOS_ASSERT(renderer.GetDevice()->CreateBuffer
+		COSMOS_ASSERT(renderer->GetDevice()->CreateBuffer
 		(
 			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -194,7 +224,7 @@ namespace Cosmos::Renderer::Vulkan
 
 		if (indicesBufferSize > 0)
 		{
-			COSMOS_ASSERT(renderer.GetDevice()->CreateBuffer
+			COSMOS_ASSERT(renderer->GetDevice()->CreateBuffer
 			(
 				VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -207,8 +237,8 @@ namespace Cosmos::Renderer::Vulkan
 		// copy from staging buffer to device local buffer
 		COSMOS_LOG(Logger::Info, "Send a signal/fence alongside the copy command in order to know when transfering is complete");
 
-		auto& renderpass = renderer.GetMainRenderpassRef();
-		VkCommandBuffer cmdbuffer = renderer.GetDevice()->CreateCommandBuffer(renderpass->GetCommandPoolRef(), VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+		auto& renderpass = renderer->GetMainRenderpassRef();
+		VkCommandBuffer cmdbuffer = renderer->GetDevice()->CreateCommandBuffer(renderpass->GetCommandPoolRef(), VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 
 		VkBufferCopy copyRegion = {};
 		copyRegion.size = verticesBufferSize;
@@ -233,39 +263,42 @@ namespace Cosmos::Renderer::Vulkan
 		fenceCI.pNext = nullptr;
 		fenceCI.flags = 0;
 
-		COSMOS_ASSERT(vkCreateFence(renderer.GetDevice()->GetLogicalDevice(), &fenceCI, nullptr, &mGPUData.transferFence) == VK_SUCCESS, "Failed to create fence for command buffer submission");
-		COSMOS_ASSERT(vkQueueSubmit(renderer.GetDevice()->GetGraphicsQueue(), 1, &submitInfo, mGPUData.transferFence) == VK_SUCCESS, "Failed to submit command buffer");
+		COSMOS_ASSERT(vkCreateFence(renderer->GetDevice()->GetLogicalDevice(), &fenceCI, nullptr, &mGPUData.transferFence) == VK_SUCCESS, "Failed to create fence for command buffer submission");
+		COSMOS_ASSERT(vkQueueSubmit(renderer->GetDevice()->GetGraphicsQueue(), 1, &submitInfo, mGPUData.transferFence) == VK_SUCCESS, "Failed to submit command buffer");
 		COSMOS_LOG(Logger::Info, "Todo: Command buffers deletion queue must be implemented, they're currently not being deleted. Make an assets manager to handle such things");
 
 		// free staging resources
-		vmaDestroyBuffer(renderer.GetDevice()->GetAllocator(), vertexStaging.buffer, vertexStaging.memory);
+		vmaDestroyBuffer(renderer->GetDevice()->GetAllocator(), vertexStaging.buffer, vertexStaging.memory);
 
 		if (indicesBufferSize > 0) {
-			vmaDestroyBuffer(renderer.GetDevice()->GetAllocator(), indexStaging.buffer, indexStaging.memory);
+			vmaDestroyBuffer(renderer->GetDevice()->GetAllocator(), indexStaging.buffer, indexStaging.memory);
 		}
     }
 
     void Mesh::SetupDescriptors()
     {
-		Context& renderer = Context::GetRef();
+		Context* renderer = (Vulkan::Context*)Context::GetRef();
 
 		// descriptor pool and descriptor sets
-		std::array<VkDescriptorPoolSize, 2> poolSizes = {};
+		std::array<VkDescriptorPoolSize, 3> poolSizes = {};
 		// 0: Camera data
 		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		poolSizes[0].descriptorCount = CONCURENTLY_RENDERED_FRAMES;
 		// 1: Albedo map
 		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		poolSizes[1].descriptorCount = CONCURENTLY_RENDERED_FRAMES;
+		// 2: Storage buffer
+		poolSizes[2].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		poolSizes[2].descriptorCount = CONCURENTLY_RENDERED_FRAMES;
 
 		VkDescriptorPoolCreateInfo descPoolCI = {};
 		descPoolCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		descPoolCI.poolSizeCount = (uint32_t)poolSizes.size();
 		descPoolCI.pPoolSizes = poolSizes.data();
 		descPoolCI.maxSets = CONCURENTLY_RENDERED_FRAMES;
-		COSMOS_ASSERT(vkCreateDescriptorPool(renderer.GetDevice()->GetLogicalDevice(), &descPoolCI, nullptr, &mGPUData.descriptorPool) == VK_SUCCESS, "Failed to create descriptor pool");
+		COSMOS_ASSERT(vkCreateDescriptorPool(renderer->GetDevice()->GetLogicalDevice(), &descPoolCI, nullptr, &mGPUData.descriptorPool) == VK_SUCCESS, "Failed to create descriptor pool");
 
-		std::vector<VkDescriptorSetLayout> layouts(CONCURENTLY_RENDERED_FRAMES, renderer.GetPipelinesLibraryRef().GetRef("Mesh")->GetDescriptorSetLayout());
+		std::vector<VkDescriptorSetLayout> layouts(CONCURENTLY_RENDERED_FRAMES, renderer->GetPipelinesLibraryRef().GetRef("Mesh")->GetDescriptorSetLayout());
 
 		VkDescriptorSetAllocateInfo descSetAllocInfo = {};
 		descSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -274,19 +307,19 @@ namespace Cosmos::Renderer::Vulkan
 		descSetAllocInfo.pSetLayouts = layouts.data();
 
 		mGPUData.descriptorSets.resize(CONCURENTLY_RENDERED_FRAMES);
-		COSMOS_ASSERT(vkAllocateDescriptorSets(renderer.GetDevice()->GetLogicalDevice(), &descSetAllocInfo, mGPUData.descriptorSets.data()) == VK_SUCCESS, "Failed to allocate descriptor sets");
+		COSMOS_ASSERT(vkAllocateDescriptorSets(renderer->GetDevice()->GetLogicalDevice(), &descSetAllocInfo, mGPUData.descriptorSets.data()) == VK_SUCCESS, "Failed to allocate descriptor sets");
     }
 
     void Mesh::UpdateDescriptors()
     {
-		Context& renderer = Context::GetRef();
+		Context* renderer = (Vulkan::Context*)Context::GetRef();
 
 		for (size_t i = 0; i < CONCURENTLY_RENDERED_FRAMES; i++) {
 
 			// 0: Camera data
 			{
 				VkDescriptorBufferInfo bufferInfo = {};
-				bufferInfo.buffer = renderer.GetBuffersLibraryRef().GetRef("Camera")->GetBuffersRef()[i];
+				bufferInfo.buffer = renderer->GetBuffersLibraryRef().GetRef("Camera")->GetBuffersRef()[i];
 				bufferInfo.offset = 0;
 				bufferInfo.range = sizeof(Renderer::Vulkan::CameraBuffer);
 
@@ -299,7 +332,7 @@ namespace Cosmos::Renderer::Vulkan
 				cameraDesc.descriptorCount = 1;
 				cameraDesc.pBufferInfo = &bufferInfo;
 
-				vkUpdateDescriptorSets(renderer.GetDevice()->GetLogicalDevice(), 1, &cameraDesc, 0, nullptr);
+				vkUpdateDescriptorSets(renderer->GetDevice()->GetLogicalDevice(), 1, &cameraDesc, 0, nullptr);
 			}
 
 			// 1: Albedo map
@@ -312,40 +345,40 @@ namespace Cosmos::Renderer::Vulkan
 				VkWriteDescriptorSet colorMapDesc = {};
 				colorMapDesc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 				colorMapDesc.dstSet = mGPUData.descriptorSets[i];
-				colorMapDesc.dstBinding = 4;
+				colorMapDesc.dstBinding = 1;
 				colorMapDesc.dstArrayElement = 0;
 				colorMapDesc.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 				colorMapDesc.descriptorCount = 1;
 				colorMapDesc.pImageInfo = &colorMapInfo;
 
-				vkUpdateDescriptorSets(renderer.GetDevice()->GetLogicalDevice(), 1, &colorMapDesc, 0, nullptr);
+				vkUpdateDescriptorSets(renderer->GetDevice()->GetLogicalDevice(), 1, &colorMapDesc, 0, nullptr);
 			}
 		}
     }
 
 	void Mesh::Clear()
 	{
-		Context& renderer = Context::GetRef();
-		vkDeviceWaitIdle(renderer.GetDevice()->GetLogicalDevice());
+		Context* renderer = (Vulkan::Context*)Context::GetRef();
+		vkDeviceWaitIdle(renderer->GetDevice()->GetLogicalDevice());
 		
 		if (mGPUData.transferFence != VK_NULL_HANDLE) {
-			vkDestroyFence(renderer.GetDevice()->GetLogicalDevice(), mGPUData.transferFence, nullptr);
+			vkDestroyFence(renderer->GetDevice()->GetLogicalDevice(), mGPUData.transferFence, nullptr);
 			mGPUData.transferFence = VK_NULL_HANDLE;
 		}
 		
 		if (mGPUData.descriptorPool != VK_NULL_HANDLE) {
-			vkDestroyDescriptorPool(renderer.GetDevice()->GetLogicalDevice(), mGPUData.descriptorPool, nullptr);
+			vkDestroyDescriptorPool(renderer->GetDevice()->GetLogicalDevice(), mGPUData.descriptorPool, nullptr);
 			mGPUData.descriptorPool = VK_NULL_HANDLE;
 		}
 		
 		if (mGPUData.vertexBuffer != VK_NULL_HANDLE) {
-			vmaDestroyBuffer(renderer.GetDevice()->GetAllocator(), mGPUData.vertexBuffer, mGPUData.vertexMemory);
+			vmaDestroyBuffer(renderer->GetDevice()->GetAllocator(), mGPUData.vertexBuffer, mGPUData.vertexMemory);
 			mGPUData.vertexBuffer = VK_NULL_HANDLE;
 			mGPUData.vertexMemory = VK_NULL_HANDLE;
 		}
 		
 		if (mGPUData.indexBuffer != VK_NULL_HANDLE) {
-			vmaDestroyBuffer(renderer.GetDevice()->GetAllocator(), mGPUData.indexBuffer, mGPUData.indexMemory);
+			vmaDestroyBuffer(renderer->GetDevice()->GetAllocator(), mGPUData.indexBuffer, mGPUData.indexMemory);
 			mGPUData.indexBuffer = VK_NULL_HANDLE;
 			mGPUData.indexMemory = VK_NULL_HANDLE;
 		}

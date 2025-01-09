@@ -1,5 +1,6 @@
 #pragma once
 
+#include "IContext.h"
 #include "Material.h"
 #include <Common/Math/Math.h>
 #include <Common/Util/Memory.h>
@@ -29,13 +30,19 @@ namespace Cosmos::Renderer
 		// returns if mesh was parsed and loaded into the programs memory
 		inline bool IsLoaded() { return mLoaded; }
 
+		// returns if mesh is currently selected
+		inline bool IsSelected() { return mSelected; }
+
+		// sets the mesh as selected/unselected
+		inline void SetSelected(bool value) { mSelected = value; }
+
 	public:
 
 		// updates the mesh frame-logic
 		virtual void OnUpdate(float timestep) = 0;
 
 		// renders the mesh
-		virtual void OnRender(const glm::mat4& transform, uint64_t id) = 0;
+		virtual void OnRender(const glm::mat4& transform, uint64_t id, IContext::Stage stage) = 0;
 
 	public:
 
@@ -55,6 +62,7 @@ namespace Cosmos::Renderer
 		std::string mPath = {};
 		Material mMaterial;
 		bool mLoaded = false;
+		bool mSelected = false;
 
 		// boundaries data (untested)
 		//glm::mat4 mAABB = glm::mat4(1.0f);

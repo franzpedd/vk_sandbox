@@ -2,10 +2,11 @@
 #include <Renderer/Wrapper/imgui.h>
 #include <Renderer/Wrapper/vulkan.h>
 
-#include <Renderer/GUI/GUI.h>
+#include <Renderer/Core/IGUI.h>
 #include <Renderer/GUI/Widget.h>
 
 #include <array>
+#include <vector>
 #include <string>
 
 // forward declarations

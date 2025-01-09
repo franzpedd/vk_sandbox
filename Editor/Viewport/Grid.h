@@ -21,6 +21,12 @@ namespace Cosmos::Editor
 		// destructor
 		~Grid();
 
+		// returns if the grid is visible
+		inline bool GetVisibility() { return mVisible; }
+
+		// sets/unsets the grid visibility
+		inline void SetVisibility(bool value) { mVisible = value; }
+
 	public:
 
 		// draws the grid
@@ -30,9 +36,6 @@ namespace Cosmos::Editor
 		void OnEvent(Shared<Platform::EventBase> event);
 
 	public:
-
-		// toogles on/off if grid should be drawn
-		void ToogleOnOff();
 
 		// create all renderer resources
 		void CreateRendererResources();

@@ -8,6 +8,7 @@
 #include <Renderer/GUI/Icon.h>
 #include <Renderer/Vulkan/Texture.h>
 
+#include <algorithm>
 #include <filesystem>
 
 namespace Cosmos::Editor
@@ -38,7 +39,7 @@ namespace Cosmos::Editor
 			}
 
 			mAssets[i].view.texture = CreateShared<Renderer::Vulkan::Texture2D>(mAssetsPath[i], true);
-			mAssets[i].view.descriptor = (VkDescriptorSet)Renderer::GUI::GetRef().AddTexture(mAssets[i].view.texture);
+			mAssets[i].view.descriptor = (VkDescriptorSet)Renderer::IGUI::GetRef()->AddTexture(mAssets[i].view.texture);
 		}
 
 		// create default resource for parent folder
@@ -102,7 +103,7 @@ namespace Cosmos::Editor
 				}
 
 				// draw assets
-				for (size_t i = 0; i < mCurrentDirAssets.size(); i++) {
+				for(size_t i = 0; i < mCurrentDirAssets.size(); i++) {
 					DrawAsset(mCurrentDirAssets[i], lastItemPosition, size);
 				}
 			}
@@ -172,13 +173,14 @@ namespace Cosmos::Editor
 		mRefreshExplorer = false;
 
 		// holds paths
-		std::vector<std::filesystem::path> paths = {};
+		std::vector<std::string> paths = {};
+		std::vector<std::string> items = {};
 
 		// recusive search
 		if (mRecursiveSearch && !mSearchboxText.empty()) {
 			for (auto const& dirEntry : std::filesystem::recursive_directory_iterator(path)) {
 				if (dirEntry.path().string().find(mSearchboxText) != std::string::npos) {
-					paths.push_back(dirEntry.path());
+					paths.push_back(dirEntry.path().string());
 				}
 			}
 		}
@@ -189,23 +191,35 @@ namespace Cosmos::Editor
 
 				// not on search mode, append all dir paths
 				if (mSearchboxText.empty()) {
-					paths.push_back(dirEntry.path());
+					if(std::filesystem::is_directory(dirEntry.path())) {
+						paths.push_back(dirEntry.path().string());
+					}
+
+					else {
+						items.push_back(dirEntry.path().string());
+					}
+
 					continue;
 				}
 
 				// on search mode, mSearchboxText must be a substring of dirEntry.filename
 				if (dirEntry.path().filename().string().find(mSearchboxText) != std::string::npos) {
-					paths.push_back(dirEntry.path());
+					paths.push_back(dirEntry.path().string());
 				}
 			}
 		}
 
+		// we like things sorted
+		std::sort(paths.begin(), paths.end());
+		std::sort(items.begin(), items.end());
+		paths.insert(paths.end(), std::make_move_iterator(items.begin()), std::make_move_iterator(items.end()));
+
 		// draw all found assets, according with previous specifications
-		for (auto& path : paths) {
+		for (auto& entry : paths) {
 
 			// string manipulation
-			std::string ext = path.extension().string();
-			std::filesystem::path pathCorrected = path;
+			std::string ext = std::filesystem::path(entry).extension().string();
+			std::filesystem::path pathCorrected = entry;
 
 			// default asset configs
 			Asset asset = {};
@@ -214,7 +228,7 @@ namespace Cosmos::Editor
 			Cosmos::replace(asset.path.begin(), asset.path.end(), char('\\'), char('/'));
 
 			// check if it's a folder
-			if (std::filesystem::is_directory(path)) {
+			if (std::filesystem::is_directory(entry)) {
 				asset.type = Asset::Type::Folder;
 				asset.view = mAssets[1].view;
 
@@ -290,7 +304,7 @@ namespace Cosmos::Editor
 			{
 				asset.type = Asset::Type::Image;
 				asset.view.texture = CreateShared<Renderer::Vulkan::Texture2D>(asset.path.c_str(), true);
-				asset.view.descriptor = (VkDescriptorSet)Renderer::GUI::GetRef().AddTexture(asset.view.texture);
+				asset.view.descriptor = (VkDescriptorSet)Renderer::IGUI::GetRef()->AddTexture(asset.view.texture);
 
 				mCurrentDirAssets.push_back(asset);
 				continue;
@@ -305,9 +319,16 @@ namespace Cosmos::Editor
 		}
 		
 		bool createNewScene = false;
+		bool createNewFolder = false;
 
 		if (ImGui::BeginPopupContextWindow("##RightClickExplorerMenu", ImGuiPopupFlags_MouseButtonRight))
 		{
+			if(ImGui::MenuItem(ICON_LC_FOLDER " New Folder")) {
+				createNewFolder = true;
+			}
+
+			ImGui::Separator();
+
 			if (ImGui::MenuItem(ICON_LC_PLUS " New Scene")) {
 				createNewScene = true;
 			}
@@ -317,6 +338,10 @@ namespace Cosmos::Editor
 
 		if (createNewScene) {
 			ImGui::OpenPopup("Creating new Scene");
+		}
+
+		if(createNewFolder) {
+			ImGui::OpenPopup("Creating new Folder");
 		}
 
 		ImVec2 center = ImGui::GetMainViewport()->GetCenter();
@@ -355,6 +380,42 @@ namespace Cosmos::Editor
 			ImGui::SameLine();
 
 			if (ImGui::Button("Cancel ##CreateNewScene:Cancel")) {
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::EndPopup();
+		}
+
+		if (ImGui::BeginPopupModal("Creating new Folder", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+			
+			char buffer[32] = {};
+			static std::string sFolderName = {};
+
+			if (ImGui::InputTextWithHint("##CreatingNewFolder", "give it a name", buffer, sizeof(buffer))) {
+				sFolderName = std::string(buffer);
+			}
+
+			std::string path = mCurrentDir;
+			path.append("/");
+			path.append(sFolderName);
+
+			if (std::filesystem::exists(path) && !sFolderName.empty()) {
+				ImGui::TextColored(ImVec4(1.0f, 0.1f, 0.1f, 1.0f), "Folder '%s' already exists", sFolderName.c_str());
+			}
+
+			if (ImGui::Button("Create ##CreateNewScene:Create")) {
+				if (!std::filesystem::exists(path) && !sFolderName.empty()) {
+					
+					std::filesystem::create_directory(path);
+					mRefreshExplorer = true;
+				}
+
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::SameLine();
+
+			if (ImGui::Button("Cancel ##CreatingNewFolder:Cancel")) {
 				ImGui::CloseCurrentPopup();
 			}
 

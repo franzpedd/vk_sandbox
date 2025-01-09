@@ -2,66 +2,81 @@
 
 #include "Gizmos.h"
 #include "Grid.h"
+#include "Core/Application.h"
 #include "Widget/PrefabHierarchy.h"
 #include <Common/Core/Defines.h>
 #include <Common/Debug/Logger.h>
+#include <Engine/Core/Project.h>
+#include <Engine/Core/Scene.h>
 #include <Engine/Entity/Camera.h>
+#include <Platform/Core/MainWindow.h>
 #include <Platform/Event/WindowEvent.h>
-#include <Renderer/Core/Context.h>
-#include <Renderer/GUI/GUI.h>
+#include <Platform/Event/MouseEvent.h>
+#include <Renderer/Core/IContext.h>
+#include <Renderer/Core/IGUI.h>
 #include <Renderer/GUI/Icon.h>
+#include <Renderer/Vulkan/Context.h>
 #include <Renderer/Vulkan/Device.h>
+#include <Renderer/Vulkan/Pipeline.h>
 #include <Renderer/Vulkan/Renderpass.h>
 #include <Renderer/Vulkan/Swapchain.h>
+#include <Renderer/Vulkan/Picking.h>
 
 namespace Cosmos::Editor
 {
-	Viewport::Viewport(PrefabHierarchy* prefabHierarchy)
-		: Widget("Viewport"), mPrefabHierarchy(prefabHierarchy)
+	Viewport::Viewport(Application* application, PrefabHierarchy* prefabHierarchy)
+		: Widget("Viewport"), mApplication(application), mPrefabHierarchy(prefabHierarchy)
 	{
 		mGizmos = CreateUnique<Gizmos>();
+		mGizmos->SetSnapping(mApplication->GetProjectRef()->GetSettingsRef().gizmo_snapping);
+		mGizmos->SetSnappingValue(mApplication->GetProjectRef()->GetSettingsRef().gizmo_snapping_value);
+		
 		mGrid = CreateUnique<Grid>();
+		mGrid->SetVisibility(mApplication->GetProjectRef()->GetSettingsRef().grid_visible);
+		
 		CreateRendererResources();
 	}
 
 	Viewport::~Viewport()
 	{
-		auto device = Renderer::Context::GetRef().GetDevice();
-		auto swapchain = Renderer::Context::GetRef().GetSwapchain();
+		Renderer::Vulkan::Context* renderer = (Renderer::Vulkan::Context*)(Renderer::IContext::GetRef());
+		auto device = renderer->GetDevice();
+		auto swapchain = renderer->GetSwapchain();
 
 		vkDeviceWaitIdle(device->GetLogicalDevice());
 		vkDestroySampler(device->GetLogicalDevice(), mSampler, nullptr);
 		vkDestroyImageView(device->GetLogicalDevice(), mDepthView, nullptr);
 		vmaDestroyImage(device->GetAllocator(), mDepthImage, mDepthMemory);
 		
-		for (size_t i = 0; i < swapchain->GetImagesRef().size(); i++) {
-			vkDestroyImageView(device->GetLogicalDevice(), mImageViews[i], nullptr);
-			vmaDestroyImage(device->GetAllocator(), mImages[i], mImageMemories[i]);
-		}
+		vkDestroyImageView(device->GetLogicalDevice(), mColorView, nullptr);
+		vmaDestroyImage(device->GetAllocator(), mColorImage, mColorMemory);
 	}
 
 	void Viewport::OnUpdate()
 	{
 		ImGui::Begin(ICON_FA_CAMERA " Viewport", nullptr);
 
-		ImGui::Image(mDescriptorSets[Renderer::Context::GetRef().GetCurrentFrame()], ImGui::GetContentRegionAvail());
+		auto& boundaries = Renderer::IContext::GetRef()->GetViewportBoundariesRef();
+		boundaries.position = { ImGui::GetWindowPos().x,ImGui::GetWindowPos().y };
+
+		ImGui::Image(mDescriptorSet, ImGui::GetContentRegionAvail());
 		
 		// updating aspect ratio for the docking
-		mCurrentSize = ImGui::GetWindowSize();
-		Engine::Camera::GetRef().SetAspectRatio(mCurrentSize.x / mCurrentSize.y);
+		boundaries.size = { ImGui::GetWindowWidth(), ImGui::GetWindowHeight() };
+		Engine::Camera::GetRef().SetAspectRatio(boundaries.size.x / boundaries.size.y);
 		
 		// viewport boundaries
-		mViewportPos = ImGui::GetWindowPos();
-		mContentRegionMin = ImGui::GetWindowContentRegionMin();
-		mContentRegionMax = ImGui::GetWindowContentRegionMax();
-		mContentRegionMin.x += ImGui::GetWindowPos().x;
-		mContentRegionMin.y += ImGui::GetWindowPos().y;
-		mContentRegionMax.x += ImGui::GetWindowPos().x;
-		mContentRegionMax.y += ImGui::GetWindowPos().y;
-	
+		boundaries.min = { ImGui::GetWindowContentRegionMin().x, ImGui::GetWindowContentRegionMin().y };
+		boundaries.min.x += ImGui::GetWindowPos().x;
+		boundaries.min.y += ImGui::GetWindowPos().y;
+
+		boundaries.max = { ImGui::GetWindowContentRegionMax().x, ImGui::GetWindowContentRegionMax().y };
+		boundaries.max.x += ImGui::GetWindowPos().x;
+		boundaries.max.y += ImGui::GetWindowPos().y;
+		
 		DrawMenu();
 
-		mGizmos->OnUpdate(mPrefabHierarchy->GetSelectedEntity(), mCurrentSize);
+		mGizmos->OnUpdate(mPrefabHierarchy->GetSelectedEntity(), boundaries.size);
 
 		ImGui::End();
 	}
@@ -77,17 +92,16 @@ namespace Cosmos::Editor
 
 		if (event->GetType() == Platform::EventType::WindowResize)
 		{
-			auto device = Renderer::Context::GetRef().GetDevice();
-			auto swapchain = Renderer::Context::GetRef().GetSwapchain();
-			auto& framebuffers = Renderer::Context::GetRef().GetRenderpassesLibraryRef().GetRef("Viewport")->GetFramebuffersRef();
+			Renderer::Vulkan::Context* renderer = (Renderer::Vulkan::Context*)(Renderer::IContext::GetRef());
+			auto device = renderer->GetDevice();
+			auto swapchain = renderer->GetSwapchain();
+			auto& framebuffers = renderer->GetRenderpassesLibraryRef().GetRef("Viewport")->GetFramebuffersRef();
 
 			vkDestroyImageView(device->GetLogicalDevice(), mDepthView, nullptr);
 			vmaDestroyImage(device->GetAllocator(), mDepthImage, mDepthMemory);
 
-			for (size_t i = 0; i < swapchain->GetImagesRef().size(); i++) {
-				vkDestroyImageView(device->GetLogicalDevice(), mImageViews[i], nullptr);
-				vmaDestroyImage(device->GetAllocator(), mImages[i], mImageMemories[i]);
-			}
+			vkDestroyImageView(device->GetLogicalDevice(), mColorView, nullptr);
+			vmaDestroyImage(device->GetAllocator(), mColorImage, mColorMemory);
 
 			for (auto& framebuffer : framebuffers) {
 				vkDestroyFramebuffer(device->GetLogicalDevice(), framebuffer, nullptr);
@@ -95,11 +109,31 @@ namespace Cosmos::Editor
 
 			CreateFramebufferResources();
 		}
+
+		if (event->GetType() == Platform::EventType::MousePress) {
+			auto& boundaries = Renderer::IContext::GetRef()->GetViewportBoundariesRef();
+			glm::vec2 framebufferSize = Platform::MainWindow::GetRef().GetFrameBufferSize();
+			glm::vec2 mousePos = Platform::MainWindow::GetRef().GetCursorPos();
+
+			if (mousePos.x <= 0 || mousePos.y <= 0) {
+				return;
+			}
+			
+			bool clickedInViewport = true;
+			clickedInViewport &= mousePos.x >= boundaries.min.x && mousePos.x <= boundaries.max.x;
+			clickedInViewport &= mousePos.y >= boundaries.min.y && mousePos.y <= boundaries.max.y;
+
+			if (clickedInViewport) {
+				Renderer::Vulkan::Context* renderer = (Renderer::Vulkan::Context*)Renderer::IContext::GetRef();
+				renderer->GetPickingRef()->ReadImagePixels(Platform::MainWindow::GetRef().GetViewportCursorPos(boundaries.position, boundaries.size));
+			}
+		}
 	}
 
 	void Viewport::DrawMenu()
 	{
-		ImGui::SetNextWindowPos({ mViewportPos.x + 10.0f, mViewportPos.y + 30.0f });
+		auto& boundaries = Renderer::IContext::GetRef()->GetViewportBoundariesRef();
+		ImGui::SetNextWindowPos({ boundaries.position.x + 10.0f, boundaries.position.y + 30.0f });
 
 		ImGui::BeginChild("##ViewportMenubar", ImVec2(), ImGuiChildFlags_AlwaysUseWindowPadding, ImGuiWindowFlags_NoBackground);
 		
@@ -147,7 +181,7 @@ namespace Cosmos::Editor
 			bool selectedButton = false;
 
 			//
-			static float snapping = 1.0f;
+			float snapping = mGizmos->GetSnappingValue();
 			ImGui::PushItemWidth(50);
 			ImGui::PushStyleVar(ImGuiStyleVar_GrabMinSize, 2.0f);
 			ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 5.0f);
@@ -164,16 +198,15 @@ namespace Cosmos::Editor
 			ImGui::SameLine();
 
 			//
-			static bool selectedSanpping = false;
-			selectedButton = selectedSanpping;
+			bool selectedSnapping = mGizmos->GetSnapping();
+			selectedButton = selectedSnapping;
 			if (selectedButton) {
 				ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_HeaderActive));
 			}
 
 			ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 5.0f);
 			if (ImGui::Button(ICON_LC_MAGNET)) {
-				mGizmos->ToogleSnapping();
-				selectedSanpping = !selectedSanpping;
+				mGizmos->SetSnapping(!mGizmos->GetSnapping());
 			}
 
 			if (selectedButton) {
@@ -195,7 +228,7 @@ namespace Cosmos::Editor
 
 			ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 5.0f);
 			if (ImGui::Button(ICON_LC_GRID_3X3)) {
-				mGrid->ToogleOnOff();
+				mGrid->SetVisibility(!mGrid->GetVisibility());
 				selectedGrid = !selectedGrid;
 			}
 
@@ -216,12 +249,12 @@ namespace Cosmos::Editor
 	void Viewport::CreateRendererResources()
 	{
 		// sets the main renderpass to the viewport
-		auto& renderer = Renderer::Context::GetRef();
-		auto device = renderer.GetDevice();
+		Renderer::Vulkan::Context* renderer = (Renderer::Vulkan::Context*)(Renderer::IContext::GetRef());
+		auto device = renderer->GetDevice();
 
 		Shared<Renderer::Vulkan::Renderpass> renderpass = CreateShared<Renderer::Vulkan::Renderpass>(device, "Viewport", VK_SAMPLE_COUNT_1_BIT);
-		renderer.GetRenderpassesLibraryRef().Insert("Viewport", renderpass);
-		renderer.GetMainRenderpassRef() = renderer.GetRenderpassesLibraryRef().GetRef("Viewport");
+		renderer->GetRenderpassesLibraryRef().Insert("Viewport", renderpass);
+		renderer->GetMainRenderpassRef() = renderer->GetRenderpassesLibraryRef().GetRef("Viewport");
 
 		// viewport format
 		mSurfaceFormat = VK_FORMAT_R8G8B8A8_SRGB;
@@ -348,15 +381,16 @@ namespace Cosmos::Editor
 		CreateFramebufferResources();
 
 		// recreate pipelines to match new renderpass
-		renderer.RecreatePipelines();
+		Renderer::Vulkan::DefaultPipelinesCreateInfo ci = { renderer->GetDevice(), renderer->GetMainRenderpassRef(), renderer->GetPipelinesLibraryRef(), renderer->GetRenderpassesLibraryRef() };
+		Renderer::Vulkan::CreateDefaultPipelines(ci);
 	}
 
 	void Viewport::CreateFramebufferResources()
 	{
-		auto& renderer = Renderer::Context::GetRef();
-		auto device = renderer.GetDevice();
-		auto swapchain = renderer.GetSwapchain();
-		auto& renderpass = renderer.GetRenderpassesLibraryRef().GetRef("Viewport");
+		Renderer::Vulkan::Context* renderer = (Renderer::Vulkan::Context*)(Renderer::IContext::GetRef());
+		auto device = renderer->GetDevice();
+		auto swapchain = renderer->GetSwapchain();
+		auto& renderpass = renderer->GetRenderpassesLibraryRef().GetRef("Viewport");
 		size_t imageCount = swapchain->GetImagesRef().size();
 
 		// depth buffer
@@ -384,52 +418,55 @@ namespace Cosmos::Editor
 			);
 		}
 
-		// images
+		// color image
+		device->CreateImage
+		(
+			swapchain->GetExtent().width,
+			swapchain->GetExtent().height,
+			1,
+			1,
+			renderpass->GetMSAA(),
+			mSurfaceFormat,
+			VK_IMAGE_TILING_OPTIMAL,
+			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, // for picking
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			mColorImage,
+			mColorMemory
+		);
+
+		mColorView = device->CreateImageView
+		(
+			mColorImage,
+			mSurfaceFormat,
+			VK_IMAGE_ASPECT_COLOR_BIT
+		);
+
+		VkCommandBuffer command = device->BeginSingleTimeCommand(renderpass->GetCommandPoolRef());
+
+		device->InsertImageMemoryBarrier
+		(
+			command,
+			mColorImage,
+			VK_ACCESS_TRANSFER_READ_BIT,
+			VK_ACCESS_MEMORY_READ_BIT,
+			VK_IMAGE_LAYOUT_UNDEFINED, // must get from last render pass (undefined also works)
+			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, // must set for next render pass
+			VK_PIPELINE_STAGE_TRANSFER_BIT,
+			VK_PIPELINE_STAGE_TRANSFER_BIT,
+			VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
+		);
+
+		device->EndSingleTimeCommand(renderpass->GetCommandPoolRef(), command);
+
+		mDescriptorSet = (VkDescriptorSet)Renderer::IGUI::GetRef()->AddTexture(mSampler, mColorView);
+
+		// frame buffers
 		{
-			mImages.resize(imageCount);
-			mImageMemories.resize(imageCount);
-			mImageViews.resize(imageCount);
-			mDescriptorSets.resize(imageCount);
 			renderpass->GetFramebuffersRef().resize(imageCount);
 
 			for (size_t i = 0; i < imageCount; i++)
 			{
-				device->CreateImage
-				(
-					swapchain->GetExtent().width,
-					swapchain->GetExtent().height,
-					1,
-					1,
-					renderpass->GetMSAA(),
-					mSurfaceFormat,
-					VK_IMAGE_TILING_OPTIMAL,
-					VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, // for picking
-					VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-					mImages[i],
-					mImageMemories[i]
-				);
-
-				VkCommandBuffer command = device->BeginSingleTimeCommand(renderpass->GetCommandPoolRef());
-
-				device->InsertImageMemoryBarrier
-				(
-					command,
-					mImages[i],
-					VK_ACCESS_TRANSFER_READ_BIT,
-					VK_ACCESS_MEMORY_READ_BIT,
-					VK_IMAGE_LAYOUT_UNDEFINED, // must get from last render pass (undefined also works)
-					VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, // must set for next render pass
-					VK_PIPELINE_STAGE_TRANSFER_BIT,
-					VK_PIPELINE_STAGE_TRANSFER_BIT,
-					VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
-				);
-
-				device->EndSingleTimeCommand(renderpass->GetCommandPoolRef(), command);
-
-				mImageViews[i] = device->CreateImageView(mImages[i], mSurfaceFormat, VK_IMAGE_ASPECT_COLOR_BIT);
-				mDescriptorSets[i] = (VkDescriptorSet)Renderer::GUI::GetRef().AddTexture(mSampler, mImageViews[i]);
-
-				std::vector<VkImageView> attachments = { mImageViews[i], mDepthView };
+				std::vector<VkImageView> attachments = { mColorView, mDepthView };
 				attachments.resize(2);
 
 				VkFramebufferCreateInfo framebufferCI = {};

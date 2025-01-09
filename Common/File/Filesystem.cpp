@@ -18,9 +18,9 @@ namespace Cosmos
 
 		// default assets dir
 #if defined _WIN32
-	static std::string s_AssetsDir = "../Data/";
+	static std::string s_AssetsDir = "../Data";
 #else 
-	static std::string s_AssetsDir = "Data/";
+	static std::string s_AssetsDir = "Data";
 #endif
 
 	std::string GetAssetsDir()
@@ -41,6 +41,7 @@ namespace Cosmos
 	std::string GetAssetSubDir(std::string subpath, bool removeExtension)
 	{
 		std::string assets = GetAssetsDir();
+		assets.append("/");
 		assets.append(subpath);
 
 		if (removeExtension) {

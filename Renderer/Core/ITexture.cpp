@@ -11,6 +11,13 @@ namespace Cosmos::Renderer
 #endif
 	}
 
+	Shared<ITexture2D> ITexture2D::Create(const BufferInfo& info, bool gui)
+	{
+#if defined RENDERER_VULKAN
+		return CreateShared<Vulkan::Texture2D>(info, gui);
+#endif
+	}
+
 	Shared<ITextureCubemap> ITextureCubemap::Create(std::vector<std::string> paths)
 	{
 #if defined RENDERER_VULKAN

@@ -25,7 +25,7 @@ namespace Cosmos::Engine
 			return settings;
 		}
 
-		// parse
+		// project settings
 		Datafile data = file["Project Settings"];
 		if (data.Exists("width")) settings.width = (uint32_t)data["width"].GetInt();
 		if (data.Exists("height")) settings.height = (uint32_t)data["height"].GetInt();
@@ -43,6 +43,12 @@ namespace Cosmos::Engine
 		if (data.Exists("gamename")) settings.gamename = data["gamename"].GetString();
 		if (data.Exists("builddate")) settings.builddate = data["builddate"].GetString();
 		if (data.Exists("initialscene")) settings.initialscene = data["initialscene"].GetString();
+
+		// editor settings
+		data = file["Editor Settings"];
+		if (data.Exists("gizmo-snapping")) settings.gizmo_snapping = (uint32_t)data["gizmo-snapping"].GetInt() == 1 ? true : false;
+		if (data.Exists("gizmo-snapping-value")) settings.gizmo_snapping_value = (float)data["gizmo-snapping-value"].GetDouble();
+		if (data.Exists("grid-visible")) settings.grid_visible = data["grid-visible"].GetInt() == 1 ? true : false;
 
 		return settings;
 	}
@@ -68,6 +74,11 @@ namespace Cosmos::Engine
 		data["Project Settings"]["builddate"].SetString(settings.builddate);
 		data["Project Settings"]["initialscene"].SetString(settings.initialscene);
 		//
+
+		data["Editor Settings"]["gizmo-snapping"].SetInt(settings.gizmo_snapping);
+		data["Editor Settings"]["gizmo-snapping-value"].SetDouble(settings.gizmo_snapping_value);
+		data["Editor Settings"]["grid-visible"].SetInt((int32_t)settings.fullscreen);
+
 		Datafile::Write(data, path);
 	}
 }

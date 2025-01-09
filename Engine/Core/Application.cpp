@@ -1,5 +1,6 @@
 #include "Application.h"
 
+#include "Extension.h"
 #include "Project.h"
 #include "Scene.h"
 #include "Timestep.h"
@@ -8,8 +9,8 @@
 #include <Common/Debug/Profiler.h>
 #include <Common/File/Filesystem.h>
 #include <Platform/Core/MainWindow.h>
-#include <Renderer/Core/Context.h>
-#include <Renderer/GUI/GUI.h>
+#include <Renderer/Core/IContext.h>
+#include <Renderer/Core/IGUI.h>
 
 namespace Cosmos::Engine
 {
@@ -23,8 +24,8 @@ namespace Cosmos::Engine
 
 		Platform::MainWindow::Initialize(this, settings.gamename.c_str(), settings.width, settings.height, settings.fullscreen);
 		Camera::Initialize(Platform::MainWindow::GetRef().GetAspectRatio());
-		Renderer::Context::Initialize(this);
-		Renderer::GUI::Initialize();
+		Renderer::IContext::Initialize(this);
+		Renderer::IGUI::Initialize();
 		mCurrentScene = new Scene(settings.initialscene);
 		mTimestep = CreateUnique<Timestep>();
 	}
@@ -33,9 +34,14 @@ namespace Cosmos::Engine
 	{
 		PROFILER_FUNCTION();
 
+		// kill all extensions
+		for (auto& extension : mExtensions.GetAllRefs()) {
+			delete extension.second;
+		}
+
 		delete mCurrentScene;
-		Renderer::GUI::Shutdown();
-		Renderer::Context::Shutdown();
+		Renderer::IGUI::Shutdown();
+		Renderer::IContext::Shutdown();
 		Camera::Shutdown();
 		Platform::MainWindow::Shutdown();
 	}
@@ -46,8 +52,8 @@ namespace Cosmos::Engine
 
 		Platform::MainWindow& window = Platform::MainWindow::GetRef();
 		Camera& camera = Camera::GetRef();
-		Renderer::GUI& gui = Renderer::GUI::GetRef();
-		Renderer::Context& renderer = Renderer::Context::GetRef();
+		Renderer::IGUI* gui = Renderer::IGUI::GetRef();
+		Renderer::IContext* renderer = Renderer::IContext::GetRef();
 
 		while (!window.ShouldQuit())
 		{
@@ -57,12 +63,20 @@ namespace Cosmos::Engine
 			mTimestep->StartFrame();
 			float ts = mTimestep->GetTimestep();
 
-			// frame logic
+			// update frame logic
 			window.OnUpdate();
 			camera.OnUpdate(ts);
+
+			// update extensions
+			for (auto& item : mExtensions.GetAllRefs()) {
+				if (item.second != nullptr) {
+					item.second->OnUpdate(ts);
+				}
+			}
+
 			mCurrentScene->OnUpdate(ts);
-			gui.OnUpdate();
-			renderer.OnUpdate();
+			gui->OnUpdate();
+			renderer->OnUpdate();
 
 			// fps and deltatime timer stops
 			mTimestep->EndFrame();
@@ -74,6 +88,24 @@ namespace Cosmos::Engine
 		PROFILER_FUNCTION();
 
 		Camera::GetRef().OnEvent(event);
-		Renderer::GUI::GetRef().OnEvent(event);
+		Renderer::IContext::GetRef()->OnEvent(event);
+		Renderer::IGUI::GetRef()->OnEvent(event);
+
+		for (auto& item : mExtensions.GetAllRefs()) {
+			if (item.second != nullptr) {
+				item.second->OnEvent(event);
+			}
+		}
+	}
+
+	void Application::OnRender(uint32_t stage)
+	{
+		mCurrentScene->OnRender(stage);
+
+		for (auto& item : mExtensions.GetAllRefs()) {
+			if (item.second != nullptr) {
+				item.second->OnRender();
+			}
+		}
 	}
 }

@@ -1,9 +1,12 @@
 #include "Prefab.h"
 
 #include "Entity.h"
-#include "Components/BaseComponents.h"
+#include "Components/AllComponents.h"
 #include "Core/Scene.h"
+
 #include <Common/Debug/Logger.h>
+#include <Renderer/Core/IMesh.h>
+#include <Renderer/Core/ITexture.h>
 
 namespace Cosmos::Engine
 {
@@ -17,11 +20,6 @@ namespace Cosmos::Engine
         : mScene(scene), mName(name)
     {
         mID = CreateUnique<ID>(id);
-    }
-
-    Prefab::~Prefab()
-    {
-
     }
 
     void Prefab::InsertChild(std::string name)
@@ -60,6 +58,7 @@ namespace Cosmos::Engine
 
         // create identifiers
         entity->AddComponent<IDComponent>();
+        entity->AddComponent<EditorComponent>();
         entity->AddComponent<NameComponent>(name);
 
         mEntities.insert({ name, entity });
@@ -85,10 +84,78 @@ namespace Cosmos::Engine
         }
 
         entity->RemoveComponent<NameComponent>();
+        entity->RemoveComponent<EditorComponent>();
         entity->RemoveComponent<IDComponent>();
         entity->RemoveComponent<MeshComponent>();
         
         delete entity;
+    }
+
+    void Prefab::DuplicateEntity(Entity* entity, bool considerOtherGroups)
+    {
+        if (!entity) {
+            return;
+        }
+
+        bool found = false;
+        if (!considerOtherGroups) {
+            auto range = mEntities.equal_range(entity->GetComponent<NameComponent>().name);
+            for (auto& it = range.first; it != range.second; ++it) {
+                if (it->second == entity) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                COSMOS_LOG(Logger::Info, "Cannot duplicate entities from other groups without setting it the flag")
+                return;
+            }
+        }
+
+        // create a new entity with a new uuid
+        entt::entity handle = mScene->GetEntityRegistryRef().create();
+        Entity* newEntity = new Entity(mScene, handle);
+        newEntity->AddComponent<IDComponent>();
+
+        // create all components based on the other entity ones
+        if (entity->HasComponent<EditorComponent>()) {
+            newEntity->AddComponent<EditorComponent>(entity->GetComponent<EditorComponent>().selectable);
+        }
+
+        if (entity->HasComponent<NameComponent>()) {
+            newEntity->AddComponent<NameComponent>(entity->GetComponent<NameComponent>().name);
+        }
+
+        if (entity->HasComponent<TransformComponent>()) {
+            newEntity->AddComponent<TransformComponent>(
+                entity->GetComponent<TransformComponent>().translation,
+                entity->GetComponent<TransformComponent>().rotation,
+                entity->GetComponent<TransformComponent>().scale
+            );
+        }
+        
+        if (entity->HasComponent<MeshComponent>()) {
+            newEntity->AddComponent<MeshComponent>();
+            newEntity->GetComponent<MeshComponent>().mesh = Renderer::IMesh::Create();
+        
+            auto& oldMesh = entity->GetComponent<MeshComponent>().mesh;
+            auto& newMesh = newEntity->GetComponent<MeshComponent>().mesh;
+        
+            if (oldMesh->IsLoaded()) {
+                newMesh->LoadFromFile(oldMesh->GetPathRef());
+            }
+        
+            if (oldMesh->GetMaterialRef().GetAlbedoTextureRef() != nullptr) {
+                newMesh->GetMaterialRef().SetName(oldMesh->GetMaterialRef().GetName());
+                newMesh->GetMaterialRef().GetAlbedoTextureRef() = Renderer::ITexture2D::Create(oldMesh->GetMaterialRef().GetAlbedoTextureRef()->GetPathRef());
+                newMesh->Refresh();
+            }
+        }
+        
+        COSMOS_LOG(Logger::Info, "Scripting duplication is not implemented");
+
+        mEntities.insert({ newEntity->GetComponent<NameComponent>().name, newEntity });
     }
 
     void Prefab::Serialize(Prefab* prefab, Datafile& sceneData)
@@ -130,8 +197,10 @@ namespace Cosmos::Engine
                 Entity* entity = new Entity(scene, handle);
 
                 IDComponent::Deserialize(entity, data);
+                EditorComponent::Deserialize(entity, data);
                 NameComponent::Deserialize(entity, data);
                 TransformComponent::Deserialize(entity, data);
+                MeshComponent::Deserialize(entity, data);
 
                 prefab->GetEntitiesRef().insert({ entity->GetComponent<NameComponent>().name, entity});
             }

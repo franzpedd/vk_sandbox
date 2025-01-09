@@ -3,7 +3,7 @@
 #include "Widget/Dockspace.h"
 #include "Widget/Mainmenu.h"
 #include <Common/Debug/Logger.h>
-#include <Renderer/GUI/GUI.h>
+#include <Renderer/Core/IGUI.h>
 
 namespace Cosmos::Editor
 {
@@ -11,10 +11,10 @@ namespace Cosmos::Editor
 		: Engine::Application(project)
 	{
 		mDockspace = new Dockspace();
-		Renderer::GUI::GetRef().AddWidget(mDockspace);
+		Renderer::IGUI::GetRef()->AddWidget(mDockspace);
 
 		mMainmenu = new Mainmenu(this);
-		Renderer::GUI::GetRef().AddWidget(mMainmenu);
+		Renderer::IGUI::GetRef()->AddWidget(mMainmenu);
 	}
 
 	Application::~Application()

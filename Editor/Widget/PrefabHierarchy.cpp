@@ -9,7 +9,7 @@
 #include <Engine/Core/Scene.h>
 #include <Engine/Entity/Entity.h>
 #include <Engine/Entity/Prefab.h>
-#include <Engine/Entity/Components/BaseComponents.h>
+#include <Engine/Entity/Components/AllComponents.h>
 #include <Platform/Core/Input.h>
 #include <Platform/Event/EventBase.h>
 #include <Platform/Event/MouseEvent.h>
@@ -118,6 +118,10 @@ namespace Cosmos::Editor
 	void PrefabHierarchy::UpdateEntity(Engine::Prefab* current, Engine::Entity* entity)
 	{
 		if (entity == nullptr) {
+			return;
+		}
+
+		if (!entity->HasComponent<Engine::IDComponent>()) {
 			return;
 		}
 
@@ -318,6 +322,10 @@ namespace Cosmos::Editor
 
 		if (ImGui::BeginPopupContextItem("##RightClickHierarchyEntity", ImGuiPopupFlags_MouseButtonRight))
 		{
+			if (ImGui::MenuItem(ICON_LC_BOOK_COPY " Duplicate")) {
+				current->DuplicateEntity(entity);
+			}
+
 			if (ImGui::MenuItem(ICON_LC_PEN_LINE " Rename Entity")) {
 				mRenamingEntity = entity;
 			}

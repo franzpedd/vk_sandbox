@@ -1,5 +1,8 @@
 #pragma once
 
+#include <Common/Math/Math.h>
+#include "Input.h"
+
 // forward declarations
 struct GLFWwindow;
 namespace Cosmos::Platform { class EventBase; }
@@ -67,13 +70,28 @@ namespace Cosmos::Platform
 		// sets the callbacks from glfw
 		void SetCallbacks();
 
+		// returns if key is currently pressed
+		bool IsKeyDown(Keycode key);
+
 	public: // vulkan
 
 		// returns the instance extensions used by the windows
 		const char** GetInstanceExtensions(unsigned int* count);
 
 		// returns the framebuffer size
-		void GetFrameBufferSize(int* width, int* height);
+		glm::vec2 GetFrameBufferSize();
+
+		// returns the window size
+		glm::vec2 GetWindowSize();
+
+		// returns the cursor current position
+		glm::vec2 GetCursorPos();
+
+		// returns the cursor current position
+		//glm::vec2 GetViewportCursorPos(glm::vec2 viewportPos, glm::vec2 viewportSize);
+
+		// returns the relative cursor position if using a smaller viewport somewhere on the screen
+		glm::vec2 GetViewportCursorPos(const glm::vec2& viewportPosition, const glm::vec2& viewportSize);
 
 		// recreates the window
 		void StaleResizeFramebuffer();

@@ -35,3 +35,13 @@
 #else
 	#error "Unknown platform!"
 #endif
+
+
+// This is used by the plugin system
+#ifdef PLATFORM_WINDOWS
+	#define API_EXPORT __declspec( dllexport )
+	#define API_IMPORT __declspec( dllimport )
+#else
+	#define API_EXPORT
+	#define API_IMPORT 
+#endif

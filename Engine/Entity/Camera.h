@@ -72,26 +72,28 @@ namespace Cosmos::Engine
 		// returns far value
 		inline float GetFar() const { return mZfar; }
 
-		// returns the current camera position
-		inline glm::vec3& GetPositionRef() { return mPosition; }
-
 		// returns the current camera rotation
 		inline glm::vec3& GetRotationRef() { return mRotation; }
 
-		// returns the camera front
-		inline glm::vec3& GetFrontRef() { return mFront; }
+		// returns the view position correctly (X and Z are right)
+		inline glm::vec3 GetViewPos() { return mViewPos; }
 
-		// returns the camera view position
-		inline glm::vec4& GetViewPosRef() { return mViewPos; }
+		// returns the camera front vector
+		inline glm::vec3 GetFront() { return mFront; }
 
 	public:
 
 		// returns a reference to the perspective/projection matrix, using defaults aspect ratio
 		glm::mat4& GetProjectionRef();
 
+		// returns a copy of the projection matrix
+		const glm::mat4 GetProjection();
+
 		// returns a reference to the view matrix
 		glm::mat4& GetViewRef();
 
+		// returns a copy of the view matrix
+		const glm::mat4 GetView();
 	public:
 
 		// updates the camera
@@ -127,11 +129,11 @@ namespace Cosmos::Engine
 		glm::mat4 mPerspective = glm::mat4(1.0f);
 		glm::mat4 mView = glm::mat4(1.0f);
 
-		glm::vec3 mFront = glm::vec3(0.0f);
 		glm::vec3 mRotation = glm::vec3(0.0f);
 		glm::vec3 mPosition = glm::vec3(0.0f, 1.0f, 0.0f);
 		glm::vec3 mScale = glm::vec3(1.0f);
-		glm::vec4 mViewPos = glm::vec4(0.0f);
+		glm::vec3 mViewPos = glm::vec4(0.0f);
+		glm::vec3 mFront = glm::vec3(0.0f, 0.0f, -1.0f);
 
 		// W A S D
 		bool mShiftPressed = false;

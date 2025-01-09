@@ -9,6 +9,7 @@
 
 // forward declarations
 namespace Cosmos::Platform { class EventBase; }
+namespace Cosmos::Editor { class Application; }
 namespace Cosmos::Editor { class Gizmos; }
 namespace Cosmos::Editor { class Grid; }
 namespace Cosmos::Editor { class PrefabHierarchy; }
@@ -20,7 +21,7 @@ namespace Cosmos::Editor
 	public:
 
 		// constructor
-		Viewport(PrefabHierarchy* prefabHierarchy);
+		Viewport(Application* application, PrefabHierarchy* prefabHierarchy);
 
 		// destructor
 		virtual ~Viewport();
@@ -49,17 +50,12 @@ namespace Cosmos::Editor
 
 	private:
 
+		Application* mApplication;
 		PrefabHierarchy* mPrefabHierarchy;
 
 		// sub-widgets
 		Unique<Gizmos> mGizmos;
 		Unique<Grid> mGrid;
-
-		// widget boundaries
-		ImVec2 mViewportPos;
-		ImVec2 mCurrentSize;
-		ImVec2 mContentRegionMin;
-		ImVec2 mContentRegionMax;
 
 		// vulkan resources
 		VkFormat mSurfaceFormat = VK_FORMAT_UNDEFINED;
@@ -70,9 +66,10 @@ namespace Cosmos::Editor
 		VmaAllocation mDepthMemory = VK_NULL_HANDLE;
 		VkImageView mDepthView = VK_NULL_HANDLE;
 
-		std::vector<VkImage> mImages;
-		std::vector<VmaAllocation> mImageMemories;
-		std::vector<VkImageView> mImageViews;
-		std::vector<VkDescriptorSet> mDescriptorSets;
+		VkImage mColorImage = VK_NULL_HANDLE;
+		VmaAllocation mColorMemory = VK_NULL_HANDLE;
+		VkImageView mColorView = VK_NULL_HANDLE;
+
+		VkDescriptorSet mDescriptorSet = VK_NULL_HANDLE;
 	};
 }

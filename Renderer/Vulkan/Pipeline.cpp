@@ -1,10 +1,12 @@
 #if defined RENDERER_VULKAN
 #include "Pipeline.h"
 
+#include "Buffer.h"
 #include "Device.h"
 #include "Renderpass.h"
 #include "Shader.h"
 #include <Common/Debug/Logger.h>
+#include <Common/File/Filesystem.h>
 
 namespace Cosmos::Renderer::Vulkan
 {
@@ -196,6 +198,169 @@ namespace Cosmos::Renderer::Vulkan
         }
 
         return VkVertexInputAttributeDescription();
+    }
+
+
+    void CreateDefaultPipelines(DefaultPipelinesCreateInfo& ci)
+    {
+        // mesh
+        {
+            if (ci.pipelineLibrary.Exists("Mesh")) {
+                ci.pipelineLibrary.Erase("Mesh");
+            }
+
+            Vulkan::Pipeline::CreateInfo meshSpecification = {};
+            meshSpecification.renderPass = ci.mainRenderpass;
+            meshSpecification.vertexShader = CreateShared<Vulkan::Shader>(ci.device, Vulkan::ShaderType::Vertex, "Mesh.vert", GetAssetSubDir("Shader/mesh.vert").c_str());
+            meshSpecification.fragmentShader = CreateShared<Vulkan::Shader>(ci.device, Vulkan::ShaderType::Fragment, "Mesh.frag", GetAssetSubDir("Shader/mesh.frag").c_str());
+            meshSpecification.vertexComponents =
+            {
+                Vertex::Component::POSITION,
+                Vertex::Component::NORMAL,
+                Vertex::Component::UV
+            };
+
+            // drawable push constants
+            VkPushConstantRange pushConstant = {};
+            pushConstant.offset = 0;
+            pushConstant.size = sizeof(Vulkan::PushConstant);
+            pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+            meshSpecification.pushConstants.push_back(pushConstant);
+
+            meshSpecification.bindings.resize(2);
+            // camera ubo
+            meshSpecification.bindings[0].binding = 0;
+            meshSpecification.bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            meshSpecification.bindings[0].descriptorCount = 1;
+            meshSpecification.bindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+            meshSpecification.bindings[0].pImmutableSamplers = nullptr;
+
+            // color map
+            meshSpecification.bindings[1].binding = 1;
+            meshSpecification.bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            meshSpecification.bindings[1].descriptorCount = 1;
+            meshSpecification.bindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+            meshSpecification.bindings[1].pImmutableSamplers = nullptr;
+
+            // create
+            ci.pipelineLibrary.Insert("Mesh", CreateShared<Vulkan::Pipeline>(ci.device, meshSpecification, nullptr));
+            ci.pipelineLibrary.GetRef("Mesh")->GetCreateInfoRef().RSCI.cullMode = VK_CULL_MODE_BACK_BIT;
+            ci.pipelineLibrary.GetRef("Mesh")->Build();
+        }
+
+        // picking
+        {
+            if (ci.pipelineLibrary.Exists("Picking")) {
+                ci.pipelineLibrary.Erase("Picking");
+            }
+
+            Vulkan::Pipeline::CreateInfo pickingSpecification = {};
+            pickingSpecification.renderPass = ci.renderpassLibrary.GetRef("Picking");
+            pickingSpecification.vertexShader = CreateShared<Vulkan::Shader>(ci.device, Vulkan::ShaderType::Vertex, "Picking.vert", GetAssetSubDir("Shader/picking.vert").c_str());
+            pickingSpecification.fragmentShader = CreateShared<Vulkan::Shader>(ci.device, Vulkan::ShaderType::Fragment, "Picking.frag", GetAssetSubDir("Shader/picking.frag").c_str());
+            pickingSpecification.vertexComponents =
+            {
+                Vertex::Component::POSITION
+            };
+
+            // drawable push constants
+            VkPushConstantRange pushConstant = {};
+            pushConstant.offset = 0;
+            pushConstant.size = sizeof(Vulkan::PushConstant);
+            pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+            pickingSpecification.pushConstants.push_back(pushConstant);
+
+            pickingSpecification.bindings.resize(2);
+            // camera ubo
+            pickingSpecification.bindings[0].binding = 0;
+            pickingSpecification.bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            pickingSpecification.bindings[0].descriptorCount = 1;
+            pickingSpecification.bindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+            pickingSpecification.bindings[0].pImmutableSamplers = nullptr;
+
+            // color map
+            pickingSpecification.bindings[1].binding = 1;
+            pickingSpecification.bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            pickingSpecification.bindings[1].descriptorCount = 1;
+            pickingSpecification.bindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+            pickingSpecification.bindings[1].pImmutableSamplers = nullptr;
+
+            // create
+            ci.pipelineLibrary.Insert("Picking", CreateShared<Vulkan::Pipeline>(ci.device, pickingSpecification, nullptr));
+            ci.pipelineLibrary.GetRef("Picking")->GetCreateInfoRef().RSCI.cullMode = VK_CULL_MODE_BACK_BIT;
+            ci.pipelineLibrary.GetRef("Picking")->Build();
+        }
+
+        // skybox
+        {
+            // remove previously 
+            if (ci.pipelineLibrary.Exists("Skybox")) {
+                ci.pipelineLibrary.Erase("Skybox");
+            }
+
+            Vulkan::Pipeline::CreateInfo skyboxSpecification = {};
+            skyboxSpecification.renderPass = ci.mainRenderpass;
+            skyboxSpecification.vertexShader = CreateShared<Vulkan::Shader>(ci.device, Vulkan::ShaderType::Vertex, "Skybox.vert", GetAssetSubDir("Shader/skybox.vert").c_str());
+            skyboxSpecification.fragmentShader = CreateShared<Vulkan::Shader>(ci.device, Vulkan::ShaderType::Fragment, "Skybox.frag", GetAssetSubDir("Shader/skybox.frag").c_str());
+            skyboxSpecification.vertexComponents =
+            {
+                Vertex::Component::POSITION
+            };
+
+            // drawable push constants
+            VkPushConstantRange pushConstant = {};
+            pushConstant.offset = 0;
+            pushConstant.size = sizeof(Vulkan::PushConstant);
+            pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+            skyboxSpecification.pushConstants.push_back(pushConstant);
+
+            skyboxSpecification.bindings.resize(2);
+            // global ubo
+            skyboxSpecification.bindings[0].binding = 0;
+            skyboxSpecification.bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            skyboxSpecification.bindings[0].descriptorCount = 1;
+            skyboxSpecification.bindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+            skyboxSpecification.bindings[0].pImmutableSamplers = nullptr;
+
+            // cubemap
+            skyboxSpecification.bindings[1].binding = 1;
+            skyboxSpecification.bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            skyboxSpecification.bindings[1].descriptorCount = 1;
+            skyboxSpecification.bindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+            skyboxSpecification.bindings[1].pImmutableSamplers = nullptr;
+
+            // create
+            ci.pipelineLibrary.Insert("Skybox", CreateShared<Vulkan::Pipeline>(ci.device, skyboxSpecification, nullptr));
+            ci.pipelineLibrary.GetRef("Skybox")->GetCreateInfoRef().RSCI.cullMode = VK_CULL_MODE_FRONT_BIT;
+            ci.pipelineLibrary.GetRef("Skybox")->Build();
+        }
+
+        // grid
+        {
+            // remove previously 
+            if (ci.pipelineLibrary.Exists("Grid")) {
+                ci.pipelineLibrary.Erase("Grid");
+            }
+
+            Renderer::Vulkan::Pipeline::CreateInfo gridSpecificaiton = {};
+            gridSpecificaiton.renderPass = ci.mainRenderpass;
+            gridSpecificaiton.vertexShader = CreateShared<Vulkan::Shader>(ci.device, Vulkan::ShaderType::Vertex, "Grid.vert", GetAssetSubDir("Shader/grid.vert").c_str());
+            gridSpecificaiton.fragmentShader = CreateShared<Vulkan::Shader>(ci.device, Vulkan::ShaderType::Fragment, "Grid.frag", GetAssetSubDir("Shader/grid.frag").c_str());
+            gridSpecificaiton.vertexComponents = { };
+            gridSpecificaiton.passingVertexData = false;
+            gridSpecificaiton.bindings.resize(1);
+
+            // camera ubo
+            gridSpecificaiton.bindings[0].binding = 0;
+            gridSpecificaiton.bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            gridSpecificaiton.bindings[0].descriptorCount = 1;
+            gridSpecificaiton.bindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+            gridSpecificaiton.bindings[0].pImmutableSamplers = nullptr;
+
+            // create
+            ci.pipelineLibrary.Insert("Grid", CreateShared<Renderer::Vulkan::Pipeline>(ci.device, gridSpecificaiton, nullptr));
+            ci.pipelineLibrary.GetRef("Grid")->Build();
+        }
     }
 
 }

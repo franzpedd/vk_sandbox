@@ -49,20 +49,18 @@ namespace Cosmos::Renderer::Vulkan
 
 	void Buffer::Map()
 	{
+		mMapped = true;
 		for (size_t i = 0; i < CONCURENTLY_RENDERED_FRAMES; i++) {
 			vmaMapMemory(mDevice->GetAllocator(), mMemories[i], &mMappedData[i]);
 		}
-
-		mMapped = true;
 	}
 
 	void Buffer::Unmap()
 	{
+		mMapped = false;
 		for (size_t i = 0; i < CONCURENTLY_RENDERED_FRAMES; i++) {
 			vmaUnmapMemory(mDevice->GetAllocator(), mMemories[i]);
 		}
-
-		mMapped = false;
 	}
 }
 #endif

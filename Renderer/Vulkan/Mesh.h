@@ -49,7 +49,7 @@ namespace Cosmos::Renderer::Vulkan
 		virtual void OnUpdate(float timestep) override;
 
 		// renders the mesh
-		virtual void OnRender(const glm::mat4& transform, uint64_t id) override;
+		virtual void OnRender(const glm::mat4& transform, uint64_t id, IContext::Stage stage) override;
 
 	public:
 

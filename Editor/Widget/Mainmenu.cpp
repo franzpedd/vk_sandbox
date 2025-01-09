@@ -13,7 +13,7 @@
 #include <Engine/Core/Scene.h>
 #include <Platform/Core/MainWindow.h>
 #include <Renderer/GUI/CustomWidget.h>
-#include <Renderer/GUI/GUI.h>
+#include <Renderer/Core/IGUI.h>
 #include <Renderer/GUI/Icon.h>
 #include <Wrapper/imgui.h>
 
@@ -25,22 +25,22 @@ namespace Cosmos::Editor
 		: Widget("Mainmenu"), mApplication(application)
 	{
 		mImDemo = new ImDemo();
-		Renderer::GUI::GetRef().AddWidget(mImDemo);
+		Renderer::IGUI::GetRef()->AddWidget(mImDemo);
 		
 		mConsole = new Console();
-		Renderer::GUI::GetRef().AddWidget(mConsole);
+		Renderer::IGUI::GetRef()->AddWidget(mConsole);
 		
 		mDebugWindow = new DebugWindow(mApplication);
-		Renderer::GUI::GetRef().AddWidget(mDebugWindow);
+		Renderer::IGUI::GetRef()->AddWidget(mDebugWindow);
 		
 		mExplorer = new Explorer(mApplication);
-		Renderer::GUI::GetRef().AddWidget(mExplorer);
+		Renderer::IGUI::GetRef()->AddWidget(mExplorer);
 		
 		mPrefabHierarchy = new PrefabHierarchy(application, mExplorer);
-		Renderer::GUI::GetRef().AddWidget(mPrefabHierarchy);
+		Renderer::IGUI::GetRef()->AddWidget(mPrefabHierarchy);
 		
-		mViewport = new Viewport(mPrefabHierarchy);
-		Renderer::GUI::GetRef().AddWidget(mViewport);
+		mViewport = new Viewport(application, mPrefabHierarchy);
+		Renderer::IGUI::GetRef()->AddWidget(mViewport);
 	}
 
 	Mainmenu::~Mainmenu()

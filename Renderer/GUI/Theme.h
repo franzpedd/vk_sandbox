@@ -28,10 +28,6 @@ namespace Cosmos
     const float CHECKBOX_BORDER_SIZE = 2.0f;
     const float CHECKBOX_ROUNDING = 2.0f;
 
-    // Load SourceSansProRegular and sets it as a default font.
-    // You may want to call ImGui::GetIO().Fonts->Clear() before this
-    void LoadFont(float size = 16.0f);
-
     // Sets the ImGui style to Spectrum
     void StyleColorsSpectrum();
 

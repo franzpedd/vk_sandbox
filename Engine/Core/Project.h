@@ -28,6 +28,10 @@ namespace Cosmos::Engine
 		std::string builddate = "Unknown";
 		std::string initialscene = "Empty Scene";
 
+		bool gizmo_snapping = true;
+		float gizmo_snapping_value = 0.01f;
+		bool grid_visible = true;
+
 		// parse/read and returns the settings data from a file
 		static ProjectSettings Read(std::string path);
 

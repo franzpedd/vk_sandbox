@@ -20,6 +20,12 @@ namespace Cosmos::Engine
 		// returns the entity handle
 		inline entt::entity GetHandle() const { return mHandle; }
 
+		// returns if entity is mouse-picked
+		inline bool IsMousePicked() { return mPicked; }
+
+		// sets/unsets the entity as mouse-picked
+		inline void SetMousePicked(bool value) { mPicked = value; }
+
 	public:
 
 		// checks if entity has a certain component
@@ -61,5 +67,6 @@ namespace Cosmos::Engine
 
 		Scene* mScene;
 		entt::entity mHandle;
+		bool mPicked = false;
 	};
 }

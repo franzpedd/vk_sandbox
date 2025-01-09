@@ -3,6 +3,7 @@
 #include <Common/Debug/Logger.h>
 #include <Common/Debug/Profiler.h>
 #include <Platform/Core/Input.h>
+#include <Platform/Core/MainWindow.h>
 #include <Platform/Event/KeyboardEvent.h>
 #include <Platform/Event/MouseEvent.h>
 
@@ -48,7 +49,7 @@ namespace Cosmos::Engine
 	void Camera::SetAspectRatio(float aspect)
 	{
 		glm::mat4 currentMatrix = mPerspective;
-		mPerspective = glm::perspective(glm::radians(mFov), aspect, mZnear, mZfar);
+		mPerspective = glm::perspectiveRH(glm::radians(mFov), aspect, mZnear, mZfar);
 		mPerspective[1][1] *= -1.0f;
 		mAspectRatio = aspect;
 	}
@@ -57,12 +58,30 @@ namespace Cosmos::Engine
 	{
 		mPerspective = glm::perspectiveRH(glm::radians(mFov), mAspectRatio, mZnear, mZfar);
 
-		if (mFlipY) mPerspective[1][1] *= -1.0f;
+		if (mFlipY) {
+			mPerspective[1][1] *= -1.0f;
+		}
+
+		return mPerspective;
+	}
+
+	const glm::mat4 Camera::GetProjection()
+	{
+		mPerspective = glm::perspectiveRH(glm::radians(mFov), mAspectRatio, mZnear, mZfar);
+
+		if (mFlipY) {
+			mPerspective[1][1] *= -1.0f;
+		}
 
 		return mPerspective;
 	}
 
 	glm::mat4& Camera::GetViewRef()
+	{
+		return mView;
+	}
+
+	const glm::mat4 Camera::GetView()
 	{
 		return mView;
 	}
@@ -73,9 +92,11 @@ namespace Cosmos::Engine
 
 		if (!mShouldMove) return;
 
+		mFront = glm::vec3(1.0f, 0.0f, 1.0f);
 		mFront.x = -cos(glm::radians(mRotation.x)) * sin(glm::radians(mRotation.y));
 		mFront.y = sin(glm::radians(mRotation.x));
 		mFront.z = cos(glm::radians(mRotation.x)) * cos(glm::radians(mRotation.y));
+		mFront = glm::normalize(mFront);
 
 		float moveSpeed = timestep * mMovementSpeed * (mShiftPressed ? 2.5f : 1.0f);
 
@@ -85,6 +106,7 @@ namespace Cosmos::Engine
 		if (mMovingRight) mPosition += glm::normalize(glm::cross(mFront, glm::vec3(0.0f, 1.0f, 0.0f))) * moveSpeed;
 
 		UpdateViewMatrix();
+		mFront *= glm::vec3(-1.0f, 1.0f, -1.0f);
 	}
 
 	void Camera::OnEvent(Shared<Platform::EventBase> event)
@@ -175,7 +197,7 @@ namespace Cosmos::Engine
 		if (mType == CameraType::FreeLook) mView = scaleMat * rotMat * translateMat;
 		else mView = scaleMat * translateMat * rotMat;
 
-		mViewPos = glm::vec4(mPosition, 0.0f) * glm::vec4(-1.0f, 1.0f, -1.0f, 1.0f);
+		mViewPos = mPosition * glm::vec3(-1.0f, 1.0f, -1.0f);
 	}
 
 	void Camera::Translate(glm::vec3 delta)

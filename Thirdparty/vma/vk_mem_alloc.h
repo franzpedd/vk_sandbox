@@ -133,7 +133,9 @@ extern "C" {
 #endif
 
 #if !defined(VMA_VULKAN_VERSION)
-    #if defined(VK_VERSION_1_3)
+    #if defined(VK_VERSION_1_4)
+        #define VMA_VULKAN_VERSION 1004000
+    #elif defined(VK_VERSION_1_3)
         #define VMA_VULKAN_VERSION 1003000
     #elif defined(VK_VERSION_1_2)
         #define VMA_VULKAN_VERSION 1002000
@@ -1121,7 +1123,7 @@ typedef struct VmaAllocatorCreateInfo
 
     It must be a value in the format as created by macro `VK_MAKE_VERSION` or a constant like: `VK_API_VERSION_1_1`, `VK_API_VERSION_1_0`.
     The patch version number specified is ignored. Only the major and minor versions are considered.
-    Only versions 1.0, 1.1, 1.2, 1.3 are supported by the current implementation.
+    Only versions 1.0...1.4 are supported by the current implementation.
     Leaving it initialized to zero is equivalent to `VK_API_VERSION_1_0`.
     It must match the Vulkan version used by the application and supported on the selected physical device,
     so it must be no higher than `VkApplicationInfo::apiVersion` passed to `vkCreateInstance`
@@ -1836,6 +1838,9 @@ VMA_CALL_PRE void VMA_CALL_POST vmaDestroyPool(
 \param allocator Allocator object.
 \param pool Pool object.
 \param[out] pPoolStats Statistics of specified pool.
+
+Note that when using the pool from multiple threads, returned information may immediately
+become outdated.
 */
 VMA_CALL_PRE void VMA_CALL_POST vmaGetPoolStatistics(
     VmaAllocator VMA_NOT_NULL allocator,
@@ -11605,6 +11610,10 @@ void VmaBlockVector::Free(const VmaAllocation hAllocation)
         }
 
         IncrementallySortBlocks();
+
+        m_hAllocator->m_Budget.RemoveAllocation(m_hAllocator->MemoryTypeIndexToHeapIndex(m_MemoryTypeIndex), hAllocation->GetSize());
+        hAllocation->Destroy(m_hAllocator);
+        m_hAllocator->m_AllocationObjectAllocator.Free(hAllocation);
     }
 
     // Destruction of a free block. Deferred until this point, outside of mutex
@@ -11615,10 +11624,6 @@ void VmaBlockVector::Free(const VmaAllocation hAllocation)
         pBlockToDelete->Destroy(m_hAllocator);
         vma_delete(m_hAllocator, pBlockToDelete);
     }
-
-    m_hAllocator->m_Budget.RemoveAllocation(m_hAllocator->MemoryTypeIndexToHeapIndex(m_MemoryTypeIndex), hAllocation->GetSize());
-    hAllocation->Destroy(m_hAllocator);
-    m_hAllocator->m_AllocationObjectAllocator.Free(hAllocation);
 }
 
 VkDeviceSize VmaBlockVector::CalcMaxBlockSize() const
@@ -12974,23 +12979,17 @@ VmaAllocator_T::VmaAllocator_T(const VmaAllocatorCreateInfo* pCreateInfo) :
         VMA_ASSERT(0 && "VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT is set but required extension or Vulkan 1.2 is not available in your Vulkan header or its support in VMA has been disabled by a preprocessor macro.");
     }
 #endif
+#if VMA_VULKAN_VERSION < 1004000
+    VMA_ASSERT(m_VulkanApiVersion < VK_MAKE_VERSION(1, 4, 0) && "vulkanApiVersion >= VK_API_VERSION_1_4 but required Vulkan version is disabled by preprocessor macros.");
+#endif
 #if VMA_VULKAN_VERSION < 1003000
-    if(m_VulkanApiVersion >= VK_MAKE_VERSION(1, 3, 0))
-    {
-        VMA_ASSERT(0 && "vulkanApiVersion >= VK_API_VERSION_1_3 but required Vulkan version is disabled by preprocessor macros.");
-    }
+    VMA_ASSERT(m_VulkanApiVersion < VK_MAKE_VERSION(1, 3, 0) && "vulkanApiVersion >= VK_API_VERSION_1_3 but required Vulkan version is disabled by preprocessor macros.");
 #endif
 #if VMA_VULKAN_VERSION < 1002000
-    if(m_VulkanApiVersion >= VK_MAKE_VERSION(1, 2, 0))
-    {
-        VMA_ASSERT(0 && "vulkanApiVersion >= VK_API_VERSION_1_2 but required Vulkan version is disabled by preprocessor macros.");
-    }
+    VMA_ASSERT(m_VulkanApiVersion < VK_MAKE_VERSION(1, 2, 0) && "vulkanApiVersion >= VK_API_VERSION_1_2 but required Vulkan version is disabled by preprocessor macros.");
 #endif
 #if VMA_VULKAN_VERSION < 1001000
-    if(m_VulkanApiVersion >= VK_MAKE_VERSION(1, 1, 0))
-    {
-        VMA_ASSERT(0 && "vulkanApiVersion >= VK_API_VERSION_1_1 but required Vulkan version is disabled by preprocessor macros.");
-    }
+    VMA_ASSERT(m_VulkanApiVersion < VK_MAKE_VERSION(1, 1, 0) && "vulkanApiVersion >= VK_API_VERSION_1_1 but required Vulkan version is disabled by preprocessor macros.");
 #endif
 #if !(VMA_MEMORY_PRIORITY)
     if(m_UseExtMemoryPriority)
@@ -16401,7 +16400,7 @@ VMA_CALL_PRE VkResult VMA_CALL_POST vmaCreateImage(
         pImageCreateInfo,
         allocator->GetAllocationCallbacks(),
         pImage);
-    if(res >= 0)
+    if(res == VK_SUCCESS)
     {
         VmaSuballocationType suballocType = pImageCreateInfo->tiling == VK_IMAGE_TILING_OPTIMAL ?
             VMA_SUBALLOCATION_TYPE_IMAGE_OPTIMAL :
@@ -16426,14 +16425,14 @@ VMA_CALL_PRE VkResult VMA_CALL_POST vmaCreateImage(
             1, // allocationCount
             pAllocation);
 
-        if(res >= 0)
+        if(res == VK_SUCCESS)
         {
             // 3. Bind image with memory.
             if((pAllocationCreateInfo->flags & VMA_ALLOCATION_CREATE_DONT_BIND_BIT) == 0)
             {
                 res = allocator->BindImageMemory(*pAllocation, 0, *pImage, VMA_NULL);
             }
-            if(res >= 0)
+            if(res == VK_SUCCESS)
             {
                 // All steps succeeded.
                 #if VMA_STATS_STRING_ENABLED

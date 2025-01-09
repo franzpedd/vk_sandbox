@@ -15,6 +15,7 @@
 #endif
 
 #include <fstream>
+#include <sstream>
 
 namespace Cosmos::Renderer::Vulkan
 {
@@ -78,7 +79,10 @@ namespace Cosmos::Renderer::Vulkan
 		}
 
 		shaderc::SpvCompilationResult res = compiler.CompileGlslToSpv(source, (shaderc_shader_kind)type, mPath, options);
-		COSMOS_ASSERT(res.GetCompilationStatus() == shaderc_compilation_status_success, "Failed to Compile shader %s. Details: %s", mPath, res.GetErrorMessage().c_str());
+		std::ostringstream msg;
+		msg << "Failed to Compile shader " << mPath << "Details: " << res.GetErrorMessage();
+
+		COSMOS_ASSERT(res.GetCompilationStatus() == shaderc_compilation_status_success, msg.str().c_str());
 
 		return { res.cbegin(), res.cend() };
 	}

@@ -28,6 +28,7 @@ paths["stb"]  = "../Thirdparty/stb";
 paths["tinygltf"] = "../Thirdparty/tinygltf"
 paths["vma"]  = "../Thirdparty/vma";
 paths["volk"]  = "../Thirdparty/volk";
+paths["steamsdk"] = "../Thirdparty/steam_sdk"
 ---- libraries
 paths["Common"] = "../Common";
 paths["Platform"] = "../Platform";
@@ -35,6 +36,7 @@ paths["Renderer"] = "../Renderer";
 paths["Engine"] = "../Engine";
 ---- applications
 paths["Editor"]  = "../Editor";
+paths["Game"]  = "../Game";
 
 -- project inclusion
 ---- dependencies
@@ -55,9 +57,10 @@ group "Library"
     include "Common.lua";
     include "Platform.lua";
     include "Renderer.lua";
-    include "Engine.lua"
+    include "Engine.lua";
 group ""
 ---- applications
 group "Application"
     include "Editor.lua";
+    include "Game.lua";
 group ""

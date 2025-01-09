@@ -22,6 +22,7 @@ project "Platform"
         "%{paths.Platform}",
         --
         "%{paths.glfw}",
+        "%{paths.glm}",
         "%{paths.spdlog}",
         "%{paths.stb}"
     }

@@ -1,5 +1,4 @@
 #version 450
-#extension GL_KHR_vulkan_glsl : enable
 #extension GL_ARB_gpu_shader_int64 : enable
 
 layout(push_constant) uniform constants
@@ -10,10 +9,9 @@ layout(push_constant) uniform constants
 
 layout(set = 0, binding = 0) uniform ubo_camera
 {
+    vec2 mousepos;
     mat4 view;
     mat4 proj;
-    mat4 viewProj;
-    vec3 cameraFront;
 } camera;
 
 layout(location = 0) in vec3 inPosition;

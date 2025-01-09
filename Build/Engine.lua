@@ -23,6 +23,7 @@ project "Engine"
         "%{paths.entt}",
         "%{paths.glm}",
         "%{paths.spdlog}",
+        "%{paths.steamsdk}",
         --
         "%{paths.Common}",
         "%{paths.Renderer}",
@@ -38,7 +39,7 @@ project "Engine"
     {
         "Common",
         "Renderer",
-        "Platform",
+        "Platform"
     }
     
     filter "configurations:Debug"

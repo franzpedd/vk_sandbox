@@ -2,7 +2,7 @@
 
 #include "Mesh.h"
 #include "Skin.h"
-#include "Core/Context.h"
+#include "Vulkan/Context.h"
 #include <Common/Debug/Logger.h>
 
 namespace Cosmos::Renderer::GLTF
@@ -122,7 +122,9 @@ namespace Cosmos::Renderer::GLTF
 		{
 			const tinygltf::Mesh mesh = model.meshes[node.mesh];
 
-			GLTF::Mesh* newMesh = new GLTF::Mesh(Context::GetRef().GetDevice(), newNode->GetMatrix());
+			Renderer::Vulkan::Context* renderer = (Renderer::Vulkan::Context*)(Renderer::IContext::GetRef());
+
+			GLTF::Mesh* newMesh = new GLTF::Mesh(renderer->GetDevice(), newNode->GetMatrix());
 
 			for (size_t j = 0; j < mesh.primitives.size(); j++)
 			{

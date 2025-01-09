@@ -40,6 +40,9 @@ namespace Cosmos::Renderer::Vulkan
 		// returns the quantity of swapchain images exists (dual-buffer, tripple-buffer, etc)
 		inline uint32_t GetImageCount() const { return mImageCount; }
 
+		// returns the swapchain image index reference (this is used to aquire next image on the swapchain)
+		inline uint32_t& GetImageIndexRef() { return mImageIndex; }
+
 		// returns a reference to the swapchain images
 		inline std::vector<VkImage>& GetImagesRef() { return mImages; }
 
@@ -119,7 +122,7 @@ namespace Cosmos::Renderer::Vulkan
 
 		Shared<Device> mDevice;
 		Library<Shared<Renderpass>>& mRenderpassLib;
-
+		uint32_t mImageIndex = 0;
 		VkSwapchainKHR mSwapchain = VK_NULL_HANDLE;
 		std::vector<VkImage> mImages = {};
 		std::vector<VkImageView> mImageViews = {};

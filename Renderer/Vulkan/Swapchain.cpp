@@ -421,10 +421,9 @@ namespace Cosmos::Renderer::Vulkan
 			return capabilities.currentExtent;
 		}
 
-		int32_t width, height;
-		Platform::MainWindow::GetRef().GetFrameBufferSize(&width, &height);
+		glm::vec2 framebufferSize = Platform::MainWindow::GetRef().GetFrameBufferSize();
 
-		VkExtent2D actualExtent = { (uint32_t)width, (uint32_t)height };
+		VkExtent2D actualExtent = { (uint32_t)framebufferSize.x, (uint32_t)framebufferSize.y };
 		actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
 		actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
 

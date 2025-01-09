@@ -7,9 +7,10 @@
 #include <Platform/Core/Input.h>
 #include <Platform/Core/MainWindow.h>
 #include <Platform/Event/KeyboardEvent.h>
-#include <Renderer/Core/Context.h>
-#include <Renderer/GUI/GUI.h>
+#include <Renderer/Core/IContext.h>
+#include <Renderer/Core/IGUI.h>
 #include <Renderer/Vulkan/Buffer.h>
+#include <Renderer/Vulkan/Context.h>
 #include <Renderer/Vulkan/Device.h>
 #include <Renderer/Vulkan/Pipeline.h>
 #include <Renderer/Vulkan/Renderpass.h>
@@ -24,7 +25,8 @@ namespace Cosmos::Editor
 
 	Grid::~Grid()
 	{
-		auto device = Renderer::Context::GetRef().GetDevice();
+		Renderer::Vulkan::Context* renderer = (Renderer::Vulkan::Context*)(Renderer::IContext::GetRef());
+		auto device = renderer->GetDevice();
 		vkDeviceWaitIdle(device->GetLogicalDevice());
 
 		vkDestroyDescriptorPool(device->GetLogicalDevice(), mDescriptorPool, nullptr);
@@ -34,13 +36,13 @@ namespace Cosmos::Editor
 	{
 		if (!mVisible) return;
 
-		auto& renderer = Renderer::Context::GetRef();
-		uint32_t currentFrame = renderer.GetCurrentFrame();
+		Renderer::Vulkan::Context* renderer = (Renderer::Vulkan::Context*)(Renderer::IContext::GetRef());
+		uint32_t currentFrame = renderer->GetCurrentFrame();
 		VkDeviceSize offsets[] = { 0 };
-		VkCommandBuffer cmdBuffer = renderer.GetMainRenderpassRef()->GetCommandfuffersRef()[currentFrame];
+		VkCommandBuffer cmdBuffer = renderer->GetMainRenderpassRef()->GetCommandfuffersRef()[currentFrame];
 		
-		vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderer.GetPipelinesLibraryRef().GetRef("Grid")->GetPipeline());
-		vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderer.GetPipelinesLibraryRef().GetRef("Grid")->GetPipelineLayout(), 0, 1, &mDescriptorSets[currentFrame], 0, nullptr);
+		vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderer->GetPipelinesLibraryRef().GetRef("Grid")->GetPipeline());
+		vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderer->GetPipelinesLibraryRef().GetRef("Grid")->GetPipelineLayout(), 0, 1, &mDescriptorSets[currentFrame], 0, nullptr);
 		vkCmdDraw(cmdBuffer, 6, 1, 0, 0);
 	}
 
@@ -57,26 +59,21 @@ namespace Cosmos::Editor
 				if (camera.CanMove() && camera.GetType() == Engine::CameraType::FreeLook) {
 					camera.SetMove(false);
 					Platform::MainWindow::GetRef().ToggleCursor(false);
-					Renderer::GUI::GetRef().ToggleCursor(false);
+					Renderer::IGUI::GetRef()->ToggleCursor(false);
 				}
 
 				else if (!camera.CanMove() && camera.GetType() == Engine::CameraType::FreeLook) {
 					camera.SetMove(true);
 					Platform::MainWindow::GetRef().ToggleCursor(true);
-					Renderer::GUI::GetRef().ToggleCursor(true);
+					Renderer::IGUI::GetRef()->ToggleCursor(true);
 				}
 			}
 		}
 	}
 
-	void Grid::ToogleOnOff()
-	{
-		mVisible == true ? mVisible = false : mVisible = true;
-	}
-
 	void Grid::CreateRendererResources()
 	{
-		auto& renderer = Renderer::Context::GetRef();
+		Renderer::Vulkan::Context* renderer = (Renderer::Vulkan::Context*)(Renderer::IContext::GetRef());
 
 		// create descriptor pool and descriptor sets
 		{
@@ -89,9 +86,9 @@ namespace Cosmos::Editor
 			descPoolCI.poolSizeCount = 1;
 			descPoolCI.pPoolSizes = &poolSize;
 			descPoolCI.maxSets = CONCURENTLY_RENDERED_FRAMES;
-			COSMOS_ASSERT(vkCreateDescriptorPool(renderer.GetDevice()->GetLogicalDevice(), &descPoolCI, nullptr, &mDescriptorPool) == VK_SUCCESS, "Failed to create descriptor pool");
+			COSMOS_ASSERT(vkCreateDescriptorPool(renderer->GetDevice()->GetLogicalDevice(), &descPoolCI, nullptr, &mDescriptorPool) == VK_SUCCESS, "Failed to create descriptor pool");
 
-			std::vector<VkDescriptorSetLayout> layouts(CONCURENTLY_RENDERED_FRAMES, renderer.GetPipelinesLibraryRef().GetRef("Grid")->GetDescriptorSetLayout());
+			std::vector<VkDescriptorSetLayout> layouts(CONCURENTLY_RENDERED_FRAMES, renderer->GetPipelinesLibraryRef().GetRef("Grid")->GetDescriptorSetLayout());
 
 			VkDescriptorSetAllocateInfo descSetAllocInfo = {};
 			descSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -100,12 +97,12 @@ namespace Cosmos::Editor
 			descSetAllocInfo.pSetLayouts = layouts.data();
 
 			mDescriptorSets.resize(CONCURENTLY_RENDERED_FRAMES);
-			COSMOS_ASSERT(vkAllocateDescriptorSets(renderer.GetDevice()->GetLogicalDevice(), &descSetAllocInfo, mDescriptorSets.data()) == VK_SUCCESS, "Failed to allocate descriptor sets");
+			COSMOS_ASSERT(vkAllocateDescriptorSets(renderer->GetDevice()->GetLogicalDevice(), &descSetAllocInfo, mDescriptorSets.data()) == VK_SUCCESS, "Failed to allocate descriptor sets");
 
 			for (size_t i = 0; i < CONCURENTLY_RENDERED_FRAMES; i++)
 			{
 				VkDescriptorBufferInfo bufferInfo{};
-				bufferInfo.buffer = renderer.GetBuffersLibraryRef().GetRef("Camera")->GetBuffersRef()[i];
+				bufferInfo.buffer = renderer->GetBuffersLibraryRef().GetRef("Camera")->GetBuffersRef()[i];
 				bufferInfo.offset = 0;
 				bufferInfo.range = sizeof(Renderer::Vulkan::CameraBuffer);
 
@@ -118,7 +115,7 @@ namespace Cosmos::Editor
 				descriptorWrite.descriptorCount = 1;
 				descriptorWrite.pBufferInfo = &bufferInfo;
 
-				vkUpdateDescriptorSets(renderer.GetDevice()->GetLogicalDevice(), 1, &descriptorWrite, 0, nullptr);
+				vkUpdateDescriptorSets(renderer->GetDevice()->GetLogicalDevice(), 1, &descriptorWrite, 0, nullptr);
 			}
 		}
 	}

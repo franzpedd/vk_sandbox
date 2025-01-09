@@ -1,0 +1,42 @@
+Name = hexagon
+Hierarchy
+{
+	Entities
+	{
+		5671946498000841763
+		{
+			ID = 5671946498000841763
+			Editor
+			{
+				Selectable = 1
+			}
+			Name = New Entity
+			Transform
+			{
+				Translation
+				{
+					X = 0.000000
+					Y = 0.000000
+					Z = 0.000000
+				}
+				Rotation
+				{
+					X = 0.000000
+					Y = 0.000000
+					Z = 0.000000
+				}
+				Scale
+				{
+					X = 1.000000
+					Y = 1.000000
+					Z = 1.000000
+				}
+			}
+			Mesh
+			{
+				Path = ../Data/Mesh/hexagon.gltf
+				Albedo = ../Data//Texture/Default/default_1024_grey.png
+			}
+		}
+	}
+}

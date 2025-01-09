@@ -3,6 +3,8 @@
 #include "Wrapper/vulkan.h"
 
 #include "Core/Vertex.h"
+
+#include <Common/Util/Library.h>
 #include <Common/Util/Memory.h>
 
 #include <unordered_map>
@@ -98,5 +100,15 @@ namespace Cosmos::Renderer::Vulkan
 		std::vector<VkVertexInputBindingDescription> mBindingDescriptions = {};
 		std::vector<VkVertexInputAttributeDescription> mAttributeDescriptions = {};
 	};
+
+	struct DefaultPipelinesCreateInfo
+	{
+		Shared<Device>& device;
+		Shared<Renderpass>& mainRenderpass;
+		Library<Shared<Pipeline>>& pipelineLibrary;
+		Library<Shared<Renderpass>>& renderpassLibrary;
+	};
+	// creates all pipelines used by the renderer
+	void CreateDefaultPipelines(DefaultPipelinesCreateInfo& ci);
 }
 #endif

@@ -10,8 +10,21 @@ namespace Cosmos::Renderer
 	{
 	public:
 
+		struct BufferInfo
+		{
+			uint8_t* data;
+			uint32_t width;
+			uint32_t height;
+			size_t length;
+		};
+
+	public:
+
 		// returns a smart-ptr to a new 2d texture
 		static Shared<ITexture2D> Create(std::string path, bool gui = false);
+
+		// returns a smart-ptr to a new 2d texture, loads from memory
+		static Shared<ITexture2D> Create(const BufferInfo& info, bool gui = false);
 
 		// constructor
 		ITexture2D() = default;

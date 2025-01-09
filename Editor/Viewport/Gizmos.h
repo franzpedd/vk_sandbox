@@ -1,7 +1,7 @@
 #pragma once
 
+#include <Common/Math/Math.h>
 #include <Common/Util/Memory.h>
-#include <Wrapper/imgui.h>
 #include <vector>
 
 // forward declarations
@@ -53,11 +53,14 @@ namespace Cosmos::Editor
 		// sets a new gizmos operation mode
 		inline void SetMode(GizmosMode mode) { mMode = mode; }
 
-		// enables/disables grid snapping
-		inline void ToogleSnapping() { mSnapping == true ? mSnapping = false : mSnapping = true; }
-
 		// returns if grid snapping is on/off
 		inline bool GetSnapping() const { return mSnapping; }
+
+		// sets the grid snapping
+		inline void SetSnapping(bool value) { mSnapping = value; }
+
+		// returns the snapping value
+		inline float GetSnappingValue() { return mSnappingValue; }
 
 		// sets a new snapping value
 		inline void SetSnappingValue(float value) { mSnappingValue = value; }
@@ -65,7 +68,7 @@ namespace Cosmos::Editor
 	public:
 
 		// updates the gizmos on objects
-		void OnUpdate(Engine::Entity* entity, ImVec2 viewportSize);
+		void OnUpdate(Engine::Entity* entity, glm::vec2 viewportSize);
 
 	private:
 
